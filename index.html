@@ -260,6 +260,12 @@
   .hist-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center;justify-content:flex-end;}
   .hist-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:2px 7px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;}
   .hist-chip:active{border-color:var(--orange);color:var(--orange);}
+  .hist-hdr-right{display:flex;align-items:center;gap:8px;}
+  .hist-del-day{background:none;border:none;color:var(--text-dim);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1;}
+  .hist-del-day:active{color:var(--red);}
+  .hist-ex{align-items:center;}
+  .hist-del-ex{background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;padding:0 2px 0 8px;line-height:1;flex-shrink:0;}
+  .hist-del-ex:active{color:var(--red);}
 
   /* FEATURE 3 — DURATION PICKER */
   .dur-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);font-weight:600;}
@@ -284,9 +290,21 @@
   .quote-overlay.legendary .quote-text{color:#ffd24a;text-shadow:0 0 24px rgba(255,107,43,.5);}
   .quote-overlay.legendary .quote-mark{font-size:60px;}
 
+  /* EDIT 1 — DATA BACKUP */
+  .data-footer{margin:24px 20px 0;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;}
+  .data-footer-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);font-weight:600;margin-bottom:10px;}
+  .data-footer-btns{display:flex;gap:10px;}
+  .data-btn{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font-d);font-size:16px;font-weight:700;letter-spacing:.5px;cursor:pointer;}
+  .data-btn:active{border-color:var(--orange);color:var(--orange);}
+  .data-footer-note{font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.4;}
+  .import-textarea{width:100%;min-height:160px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;}
+  .import-textarea:focus{border-color:var(--orange);}
+
   /* TOAST */
   .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:14px;font-weight:500;padding:12px 20px;border-radius:12px;z-index:400;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:88%;text-align:center;}
   .toast.visible{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast-action{margin-left:14px;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-family:var(--font-d);font-size:14px;font-weight:700;letter-spacing:.5px;cursor:pointer;pointer-events:auto;vertical-align:middle;}
+  .toast-action:active{background:#e55a1f;}
 </style>
 </head>
 <body>
@@ -482,6 +500,15 @@
   </div>
   <div class="sec-title">Workout History</div>
   <div id="hist-container"><div class="empty-hist">No workouts yet.<br>Complete your first session! 💪</div></div>
+  <!-- EDIT 1: DATA BACKUP -->
+  <div class="data-footer">
+    <div class="data-footer-lbl">Data</div>
+    <div class="data-footer-btns">
+      <button class="data-btn" id="export-btn" onclick="exportData(this)">⬆ Export</button>
+      <button class="data-btn" onclick="openImportModal()">⬇ Import</button>
+    </div>
+    <div class="data-footer-note">Export copies a JSON backup to your clipboard and downloads a file. Import restores from pasted JSON.</div>
+  </div>
 </div>
 
 <!-- REST OVERLAY -->
@@ -552,6 +579,20 @@
     <div class="edit-actions">
       <button class="edit-cancel" onclick="preloadAnswer(false)">No, use defaults</button>
       <button class="edit-save" onclick="preloadAnswer(true)">Yes, load</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL (EDIT 1) -->
+<div class="modal-overlay" id="import-modal" onclick="closeModal('import-modal',event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Import Backup</div>
+    <div class="edit-sub" style="margin-bottom:12px;">Paste a previously exported backup below. This overwrites all current data.</div>
+    <textarea id="import-input" class="import-textarea" placeholder='{ "history": [...], "pbs": {...}, ... }'></textarea>
+    <div class="edit-actions" style="margin-top:14px;">
+      <button class="edit-cancel" onclick="closeModal('import-modal')">Cancel</button>
+      <button class="edit-save" onclick="doImport()">Restore</button>
     </div>
   </div>
 </div>
@@ -707,10 +748,12 @@ let settings = {
   keepAwake: true,    // FEATURE 4: wake lock
 };
 
-let restTimer = null, restRemaining = 60;
-let exTimer = null, exTimerPaused = false, exTimerRemaining = 0;
-let prestartTimer = null;
+// EDIT 3: timestamp-based timers (survive Android backgrounding/lock)
+let restTimer = null, restEndTs = 0;
+let exTimer = null, exTimerPaused = false, exTimerRemaining = 0, exEndTs = 0, exTotalSec = 0;
+let prestartTimer = null, prestartEndTs = 0, prestartTargetSec = 0;
 let audioCtx = null;
+let lastDeleted = null; // EDIT 2: undo buffer for history deletes
 
 // ═══════════════════════
 // STORAGE
@@ -772,8 +815,10 @@ function adjustRestDefault(delta) {
   saveSettings();
 }
 function adjustRest(delta) {
-  restRemaining = Math.min(180, Math.max(5, restRemaining + delta));
-  document.getElementById('rest-num').textContent = restRemaining;
+  // EDIT 3: shift the end timestamp, clamp remaining 5..180
+  const rem = Math.min(180, Math.max(5, Math.ceil((restEndTs - Date.now())/1000) + delta));
+  restEndTs = Date.now() + rem * 1000;
+  document.getElementById('rest-num').textContent = rem;
 }
 
 // ═══════════════════════
@@ -1066,58 +1111,67 @@ function startPrestart(targetSec) {
   clearTimers();
   document.getElementById('prestart-area').style.display = 'flex';
   document.getElementById('exercise-timer-area').style.display = 'none';
-  const preEl = document.getElementById('prestart-num');
-  let count = settings.prestartSec;
-  preEl.textContent = count;
-  prestartTimer = setInterval(() => {
-    count--;
-    preEl.textContent = count;
+  prestartTargetSec = targetSec;
+  prestartEndTs = Date.now() + settings.prestartSec * 1000;
+  tickPrestart();
+  prestartTimer = setInterval(tickPrestart, 1000);
+}
+function tickPrestart() {
+  const rem = Math.max(0, Math.ceil((prestartEndTs - Date.now()) / 1000));
+  document.getElementById('prestart-num').textContent = rem;
+  if (rem <= 0) {
+    clearInterval(prestartTimer); prestartTimer = null;
+    startExerciseTimer(prestartTargetSec);
+  } else {
     haptic([30]);
-    if (count <= 0) {
-      clearInterval(prestartTimer);
-      startExerciseTimer(targetSec);
-    }
-  }, 1000);
+  }
 }
 
 function startExerciseTimer(sec) {
   document.getElementById('prestart-area').style.display = 'none';
-  const timerArea = document.getElementById('exercise-timer-area');
-  timerArea.style.display = 'flex';
-  const numEl = document.getElementById('ex-timer-num');
-  const ccFg = document.getElementById('cc-fg');
-  ccFg.style.strokeDasharray = CIRC;
+  document.getElementById('exercise-timer-area').style.display = 'flex';
+  document.getElementById('cc-fg').style.strokeDasharray = CIRC;
+  exTotalSec = sec;
   exTimerRemaining = sec;
   exTimerPaused = false;
+  exEndTs = Date.now() + sec * 1000;
   document.getElementById('btn-pause').textContent = '⏸ Pause';
-  numEl.textContent = sec;
-  ccFg.style.strokeDashoffset = 0;
-
-  exTimer = setInterval(() => {
-    if (exTimerPaused) return;
-    exTimerRemaining--;
-    numEl.textContent = exTimerRemaining;
-    const pct = (sec - exTimerRemaining) / sec;
-    ccFg.style.strokeDashoffset = CIRC * pct;
-    if (exTimerRemaining <= 0) {
-      clearInterval(exTimer);
-      haptic([100, 50, 100]);
-      playChime('rest');
-      document.getElementById('btn-done').disabled = false;
-      // Auto-complete after 1 second
-      setTimeout(() => {
-        if (state.workout.active) completeSet();
-      }, 1200);
-    }
-  }, 1000);
+  paintExTimer(sec);
+  exTimer = setInterval(tickExTimer, 1000);
+}
+function paintExTimer(rem) {
+  document.getElementById('ex-timer-num').textContent = rem;
+  const pct = exTotalSec ? (exTotalSec - rem) / exTotalSec : 0;
+  document.getElementById('cc-fg').style.strokeDashoffset = CIRC * pct;
+}
+function tickExTimer() {
+  if (exTimerPaused) return;
+  const rem = Math.max(0, Math.ceil((exEndTs - Date.now()) / 1000));
+  exTimerRemaining = rem;
+  paintExTimer(rem);
+  if (rem <= 0) {
+    clearInterval(exTimer); exTimer = null;
+    haptic([100, 50, 100]);
+    playChime('rest');
+    document.getElementById('btn-done').disabled = false;
+    setTimeout(() => { if (state.workout.active) completeSet(); }, 1200);
+  }
 }
 
 function togglePause() {
   exTimerPaused = !exTimerPaused;
+  if (exTimerPaused) {
+    // freeze remaining
+    exTimerRemaining = Math.max(0, Math.ceil((exEndTs - Date.now()) / 1000));
+  } else {
+    // resume: push end timestamp out by frozen remaining
+    exEndTs = Date.now() + exTimerRemaining * 1000;
+  }
   document.getElementById('btn-pause').textContent = exTimerPaused ? '▶ Resume' : '⏸ Pause';
 }
 function clearTimers() {
   clearInterval(exTimer); clearInterval(prestartTimer);
+  exTimer = null; prestartTimer = null;
   exTimerPaused = false;
 }
 
@@ -1207,29 +1261,35 @@ function exitWorkout() {
 // ═══════════════════════
 function showRest(sec, nextName) {
   clearTimers(); // BUG FIX: kill any prestart/exercise timer before resting
-  restRemaining = Math.min(180, Math.max(30, sec));
-  const overlay = document.getElementById('rest-overlay');
-  const numEl = document.getElementById('rest-num');
+  const clamped = Math.min(180, Math.max(30, sec));
+  restEndTs = Date.now() + clamped * 1000; // EDIT 3: end timestamp
   document.getElementById('rest-next-name').textContent = nextName;
-  numEl.textContent = restRemaining;
-  numEl.className = 'rest-big normal';
-  overlay.classList.add('visible');
+  document.getElementById('rest-overlay').classList.add('visible');
   clearInterval(restTimer);
-  restTimer = setInterval(() => {
-    restRemaining--;
-    numEl.textContent = restRemaining;
-    if (restRemaining <= 3) numEl.className = 'rest-big tick';
-    if (restRemaining <= 0) {
-      clearInterval(restTimer);
-      overlay.classList.remove('visible');
-      playChime('rest');
-      haptic([100, 50, 100]);
-      renderWorkoutStep(); // BUG FIX: render the next set fresh after rest
-    }
-  }, 1000);
+  paintRest();
+  restTimer = setInterval(tickRest, 250);
+}
+function paintRest() {
+  const rem = Math.max(0, Math.ceil((restEndTs - Date.now()) / 1000));
+  const numEl = document.getElementById('rest-num');
+  numEl.textContent = rem;
+  numEl.className = rem <= 3 ? 'rest-big tick' : 'rest-big normal';
+}
+function tickRest() {
+  const rem = Math.max(0, Math.ceil((restEndTs - Date.now()) / 1000));
+  const numEl = document.getElementById('rest-num');
+  numEl.textContent = rem;
+  numEl.className = rem <= 3 ? 'rest-big tick' : 'rest-big normal';
+  if (rem <= 0) {
+    clearInterval(restTimer); restTimer = null;
+    document.getElementById('rest-overlay').classList.remove('visible');
+    playChime('rest');
+    haptic([100, 50, 100]);
+    renderWorkoutStep(); // BUG FIX: render the next set fresh after rest
+  }
 }
 function skipRest() {
-  clearInterval(restTimer);
+  clearInterval(restTimer); restTimer = null;
   document.getElementById('rest-overlay').classList.remove('visible');
   renderWorkoutStep(); // BUG FIX: render next set on manual skip
 }
@@ -1329,7 +1389,10 @@ function renderHistory() {
     return `<div class="hist-card">
       <div class="hist-date">
         <span>${ds} · ${ts} · ${h.location==='gym'?'🏋️':'🏠'} · ${h.durationMin}min</span>
-        <span class="hist-badge">${h.totalSets} sets</span>
+        <span class="hist-hdr-right">
+          <span class="hist-badge">${h.totalSets} sets</span>
+          <button class="hist-del-day" onclick="deleteSession(${h.ts})" title="Delete session">🗑</button>
+        </span>
       </div>
       <div class="hist-exs">${h.exercises.map((e, exi) => {
         const reps = (e.loggedReps || []);
@@ -1339,6 +1402,7 @@ function renderHistory() {
         return `<div class="hist-ex">
           <span class="hist-ex-name">${e.name}</span>
           <span class="hist-chips">${e.setsCompleted}/3 ${chips}${fallback}</span>
+          <button class="hist-del-ex" onclick="deleteHistExercise(${h.ts},${exi})" title="Remove exercise">✕</button>
         </div>`;
       }).join('')}</div>
     </div>`;
@@ -1370,12 +1434,26 @@ function navTo(tab) {
 // TOAST
 // ═══════════════════════
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, actionLabel, actionFn) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('visible'), 2400);
+  t.innerHTML = '';
+  if (actionLabel && typeof actionFn === 'function') {
+    const span = document.createElement('span');
+    span.textContent = msg;
+    t.appendChild(span);
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = actionLabel;
+    btn.onclick = () => { clearTimeout(toastTimer); t.classList.remove('visible'); actionFn(); };
+    t.appendChild(btn);
+    t.classList.add('visible');
+    toastTimer = setTimeout(() => t.classList.remove('visible'), 5000);
+  } else {
+    t.textContent = msg;
+    t.classList.add('visible');
+    toastTimer = setTimeout(() => t.classList.remove('visible'), 2400);
+  }
 }
 
 // ═══════════════════════
@@ -1478,6 +1556,125 @@ function prevRepsFor(name) {
 }
 
 // ═══════════════════════
+// DELETE FROM HISTORY
+// ═══════════════════════
+// EDIT 2: confirm() removed — the 5s Undo toast is the data-loss guard.
+function deleteSession(ts) {
+  const idx = state.history.findIndex(h => h.ts === ts);
+  if (idx < 0) return;
+  const sess = state.history[idx];
+  const names = sess.exercises.map(e => e.name);
+  state.history.splice(idx, 1);
+  names.forEach(n => recomputePB(n));
+  save();
+  renderHistory(); renderHome();
+  lastDeleted = { type: 'session', entry: sess };
+  showToast('Session deleted', 'Undo', undoDelete);
+}
+function deleteHistExercise(ts, exIdx) {
+  const sess = state.history.find(h => h.ts === ts);
+  if (!sess) return;
+  const ex = sess.exercises[exIdx];
+  if (!ex) return;
+  const prevTotalSets = sess.totalSets;
+  sess.exercises.splice(exIdx, 1);
+  let removedSession = null;
+  if (!sess.exercises.length) {
+    const i = state.history.findIndex(h => h.ts === ts);
+    removedSession = state.history[i];
+    state.history.splice(i, 1);
+  } else {
+    sess.totalSets = sess.exercises.reduce((a, e) => a + (e.setsCompleted || 0), 0);
+  }
+  recomputePB(ex.name);
+  save();
+  renderHistory(); renderHome();
+  lastDeleted = { type: 'exercise', ts, exIdx: +exIdx, exercise: ex, prevTotalSets, removedSession };
+  showToast('Exercise removed', 'Undo', undoDelete);
+}
+function undoDelete() {
+  if (!lastDeleted) return;
+  if (lastDeleted.type === 'session') {
+    state.history.push(lastDeleted.entry);
+    state.history.sort((a, b) => b.ts - a.ts);
+    lastDeleted.entry.exercises.forEach(e => recomputePB(e.name));
+  } else {
+    const { ts, exIdx, exercise, prevTotalSets, removedSession } = lastDeleted;
+    if (removedSession) {
+      removedSession.exercises.splice(exIdx, 0, exercise);
+      removedSession.totalSets = prevTotalSets;
+      state.history.push(removedSession);
+      state.history.sort((a, b) => b.ts - a.ts);
+    } else {
+      const sess = state.history.find(h => h.ts === ts);
+      if (sess) {
+        sess.exercises.splice(exIdx, 0, exercise);
+        sess.totalSets = prevTotalSets;
+      }
+    }
+    recomputePB(exercise.name);
+  }
+  lastDeleted = null;
+  save();
+  renderHistory(); renderHome();
+}
+
+// ═══════════════════════
+// EDIT 1 — EXPORT / IMPORT BACKUP
+// ═══════════════════════
+function exportData(btn) {
+  const bundle = {
+    version: 4,
+    exportedAt: new Date().toISOString(),
+    history: state.history,
+    pbs: state.pbs,
+    settings: settings,
+    milestones: state.milestones,
+  };
+  const json = JSON.stringify(bundle, null, 2);
+  // clipboard (reuse the "✓ Copied!" feedback pattern)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(() => {
+      if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = o, 2000); }
+    }).catch(() => showToast('Clipboard blocked — file downloaded instead'));
+  }
+  // file download (Android/Chrome + PC friendly)
+  try {
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `abracadabra-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { showToast('File download not supported here'); }
+}
+function openImportModal() {
+  document.getElementById('import-input').value = '';
+  document.getElementById('import-modal').classList.add('visible');
+}
+function doImport() {
+  const raw = document.getElementById('import-input').value.trim();
+  if (!raw) { showToast('Paste backup JSON first'); return; }
+  let data;
+  try { data = JSON.parse(raw); }
+  catch (e) { showToast('Invalid JSON — check the text'); return; }
+  if (!data || !Array.isArray(data.history) || typeof data.pbs !== 'object' || data.pbs === null) {
+    showToast('Not a valid ABracadABra backup'); return;
+  }
+  if (!confirm('Overwrite ALL current data with this backup? This cannot be undone.')) return;
+  state.history = data.history;
+  state.pbs = data.pbs;
+  state.milestones = (data.milestones && typeof data.milestones === 'object') ? data.milestones : {};
+  if (data.settings && typeof data.settings === 'object') Object.assign(settings, data.settings);
+  save();
+  applySettings();
+  closeModal('import-modal');
+  renderHome(); renderHistory();
+  showToast('Backup restored ✓');
+}
+
+// ═══════════════════════
 // FEATURE 2 — PRELOAD PROMPT
 // ═══════════════════════
 function showPreloadPrompt() {
@@ -1528,7 +1725,13 @@ async function releaseWakeLock() {
   try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } } catch(e) {}
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state.workout.active) requestWakeLock();
+  if (document.visibilityState !== 'visible') return;
+  if (state.workout.active) requestWakeLock();
+  // EDIT 3: an active timer may have frozen while backgrounded — recompute now.
+  // These handlers self-fire completion if the timer already expired off-screen.
+  if (restTimer) tickRest();
+  else if (exTimer && !exTimerPaused) tickExTimer();
+  else if (prestartTimer) tickPrestart();
 });
 
 // ═══════════════════════
@@ -1618,7 +1821,7 @@ function checkSessionMilestones() {
 // ═══════════════════════
 if ('serviceWorker' in navigator) {
   const swCode = `
-    const CACHE = 'abracadabra-v2';
+    const CACHE = 'abracadabra-v4';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
     });
