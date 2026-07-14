@@ -144,7 +144,7 @@
   .btn-done{flex:1;padding:16px;background:var(--green);color:#fff;border:none;border-radius:12px;font-family:var(--font-d);font-size:20px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:background .2s,transform .1s;}
   .btn-done:active{background:#16a34a;transform:scale(.98);}
   .btn-done:disabled{background:var(--surface2);color:var(--text-dim);cursor:not-allowed;}
-  .btn-skip{padding:16px 20px;background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);border-radius:12px;font-family:var(--font-d);font-size:18px;font-weight:600;cursor:pointer;transition:border-color .2s;}
+  .btn-skip{padding:16px 14px;background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);border-radius:12px;font-family:var(--font-d);font-size:16px;font-weight:600;cursor:pointer;transition:border-color .2s;white-space:nowrap;}
   .btn-skip:active{border-color:var(--blue);color:var(--blue);}
 
   /* PB BADGE */
@@ -290,6 +290,29 @@
   .quote-overlay.legendary .quote-text{color:#ffd24a;text-shadow:0 0 24px rgba(255,107,43,.5);}
   .quote-overlay.legendary .quote-mark{font-size:60px;}
 
+  /* EDIT 4 — SESSION TARGET EDIT */
+  .ex-det-edit{cursor:pointer;border-bottom:1px dotted var(--border);display:inline-block;}
+  .ex-det-edit:active{color:var(--orange);}
+  .target-stepper{display:flex;align-items:center;gap:12px;}
+  .target-stepper .edit-input{margin-bottom:0;flex:1;}
+
+  /* VERSION TAG */
+  .version-tag{font-size:11px;color:var(--text-dim);letter-spacing:1.5px;font-weight:600;text-align:center;text-transform:uppercase;}
+
+  /* EDIT 5 — HISTORY FILTER + TREND */
+  .hist-filter-row{padding:0 20px 6px;display:flex;align-items:center;gap:10px;}
+  .hist-filter-row select{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font-b);font-size:13px;border-radius:10px;padding:9px 10px;cursor:pointer;}
+  .trend-panel{margin:0 20px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .trend-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);font-weight:600;margin-bottom:12px;}
+  .trend-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .trend-row:last-child{margin-bottom:0;}
+  .trend-date{font-size:11px;color:var(--text-dim);width:52px;flex-shrink:0;}
+  .trend-bar-wrap{flex:1;height:14px;background:var(--surface2);border-radius:7px;overflow:hidden;}
+  .trend-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--orange));border-radius:7px;min-width:2px;transition:width .3s;}
+  .trend-bar.pb{background:linear-gradient(90deg,var(--orange),#ffd24a);}
+  .trend-val{font-size:12px;font-weight:600;color:var(--text);width:64px;text-align:right;flex-shrink:0;}
+  .trend-val.pb{color:#ffd24a;}
+
   /* EDIT 1 — DATA BACKUP */
   .data-footer{margin:24px 20px 0;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;}
   .data-footer-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);font-weight:600;margin-bottom:10px;}
@@ -314,6 +337,7 @@
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:28px;padding:40px 24px;">
     <div>
       <div class="big-title"><span style="color:var(--orange)">AB</span>racad<span style="color:var(--blue)">AB</span>ra</div>
+      <div class="version-tag" id="version-loc"></div>
       <div class="sub" style="margin-top:8px">Where are you training today?</div>
     </div>
     <div class="loc-cards">
@@ -336,6 +360,7 @@
   <div class="home-hero">
     <div class="home-greeting">Today's<br><span class="day" id="today-day">Session</span></div>
     <div class="home-meta" id="today-meta">—</div>
+    <div class="version-tag" id="version-home" style="text-align:left;margin-top:2px;"></div>
   </div>
   <div class="stats-row">
     <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Sessions</div></div>
@@ -472,7 +497,8 @@
     </div>
     <div class="action-row">
       <button class="btn-done" id="btn-done" onclick="completeSet()">✓ Done</button>
-      <button class="btn-skip" onclick="skipExercise()">Skip</button>
+      <button class="btn-skip" onclick="skipSet()">Skip Set</button>
+      <button class="btn-skip" onclick="skipExercise()">Skip Ex</button>
     </div>
   </div>
 </div>
@@ -499,6 +525,7 @@
     <div class="streak-badge" id="streak-badge-hist">🔥 0 days</div>
   </div>
   <div class="sec-title">Workout History</div>
+  <div id="hist-filter-wrap"></div>
   <div id="hist-container"><div class="empty-hist">No workouts yet.<br>Complete your first session! 💪</div></div>
   <!-- EDIT 1: DATA BACKUP -->
   <div class="data-footer">
@@ -597,6 +624,24 @@
   </div>
 </div>
 
+<!-- TARGET EDIT MODAL (EDIT 4) -->
+<div class="modal-overlay" id="target-modal" onclick="closeModal('target-modal',event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="target-title">Set Target</div>
+    <div class="edit-sub" id="target-sub">This session only</div>
+    <div class="target-stepper">
+      <button class="dur-btn" onclick="stepTarget(-1)">−</button>
+      <input class="edit-input" id="target-input" type="number" inputmode="numeric" min="1" max="999">
+      <button class="dur-btn" onclick="stepTarget(1)">+</button>
+    </div>
+    <div class="edit-actions" style="margin-top:16px;">
+      <button class="edit-cancel" onclick="closeModal('target-modal')">Cancel</button>
+      <button class="edit-save" onclick="saveTarget()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- QUOTE OVERLAY (FEATURE 5) -->
 <div class="quote-overlay" id="quote-overlay" onclick="dismissQuote()">
   <div class="quote-inner">
@@ -621,6 +666,11 @@
 </nav>
 
 <script>
+// ═══════════════════════
+// APP VERSION (bump this one line per revision)
+// ═══════════════════════
+const APP_VERSION = '3.5';
+
 // ═══════════════════════
 // EXERCISE DATABASE
 // ═══════════════════════
@@ -932,7 +982,7 @@ function renderHome() {
       <div class="ex-num">${i+1}</div>
       <div class="ex-info">
         <div class="ex-name" onclick="openInfo(state.todayEx[${i}].name)">${ex.name} <span class="info-i">ⓘ</span></div>
-        <div class="ex-det">${detail}</div>
+        <div class="ex-det ex-det-edit" onclick="openTargetEdit(${i})">${detail} ✎</div>
         ${pbStr ? `<div class="ex-pb">⭐ ${pbStr}</div>` : ''}
       </div>
       <span class="grp-tag ${g.cls}">${g.label}</span>
@@ -1235,6 +1285,26 @@ function showPBFlash() {
   setTimeout(() => { el.style.display = 'none'; }, 2500);
 }
 
+function skipSet() {
+  // EDIT 6: skip only the current set — leave it uncompleted (null), advance via normal rest flow.
+  clearTimers();
+  const w = state.workout;
+  w.setsCompleted[w.exIdx][w.setIdx] = false;
+  w.setLoggedReps[w.exIdx][w.setIdx] = null;
+  const nextSet = w.setIdx + 1;
+  const nextEx = w.exIdx + 1;
+  const ex = state.todayEx[w.exIdx];
+  if (nextSet < 3) {
+    w.setIdx = nextSet;
+    showRest(settings.defaultRest, ex.name + ` — Set ${nextSet+1}`);
+  } else if (nextEx < state.todayEx.length) {
+    w.exIdx = nextEx; w.setIdx = 0;
+    showRest(settings.defaultRest + 30, state.todayEx[nextEx].name);
+  } else {
+    finishWorkout();
+  }
+}
+
 function skipExercise() {
   clearTimers();
   const w = state.workout;
@@ -1376,13 +1446,64 @@ function shareWorkout() {
 // ═══════════════════════
 // HISTORY
 // ═══════════════════════
+let histFilter = 'all'; // EDIT 5
+function onHistFilter(v) { histFilter = v; renderHistory(); }
+function histExerciseNames() {
+  const s = new Set();
+  state.history.forEach(h => h.exercises.forEach(e => s.add(e.name)));
+  return [...s].sort();
+}
+function buildTrend(name) {
+  // oldest → newest; best logged value per session; PB flagged once
+  const sessions = state.history.filter(h => h.exercises.some(e => e.name === name)).slice().reverse();
+  let maxV = 1, unit = 'reps';
+  const rows = sessions.map(h => {
+    const e = h.exercises.find(x => x.name === name);
+    unit = e.unit;
+    const logged = (e.loggedReps || []).filter(v => v !== null);
+    const best = logged.length ? Math.max(...logged) : null;
+    if (best !== null && best > maxV) maxV = best;
+    return { ts: h.ts, best, unit: e.unit };
+  });
+  const pbBest = state.pbs[name] ? state.pbs[name].best : null;
+  let pbFlagged = false;
+  const body = rows.map(r => {
+    const w = r.best !== null ? Math.round(r.best / maxV * 100) : 0;
+    const isPB = !pbFlagged && pbBest !== null && r.best === pbBest;
+    if (isPB) pbFlagged = true;
+    const ds = new Date(r.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div class="trend-row">
+      <span class="trend-date">${ds}</span>
+      <div class="trend-bar-wrap"><div class="trend-bar${isPB?' pb':''}" style="width:${w}%"></div></div>
+      <span class="trend-val${isPB?' pb':''}">${r.best !== null ? r.best + r.unit : '—'}${isPB ? ' ⭐' : ''}</span>
+    </div>`;
+  }).join('');
+  return `<div class="trend-panel"><div class="trend-title">${name} — best per session</div>${body}</div>`;
+}
 function renderHistory() {
+  const fw = document.getElementById('hist-filter-wrap');
   const c = document.getElementById('hist-container');
   if (!state.history.length) {
+    fw.innerHTML = '';
     c.innerHTML = '<div class="empty-hist">No workouts yet.<br>Complete your first session! 💪</div>';
     return;
   }
-  c.innerHTML = '<div class="hist-list">' + state.history.map(h => {
+  // EDIT 5: filter dropdown (rebuilt each render; preserve selection)
+  const names = histExerciseNames();
+  if (histFilter !== 'all' && !names.includes(histFilter)) histFilter = 'all';
+  fw.innerHTML = `<div class="hist-filter-row">
+    <select onchange="onHistFilter(this.value)">
+      <option value="all"${histFilter==='all'?' selected':''}>All exercises</option>
+      ${names.map(n => `<option value="${n.replace(/"/g,'&quot;')}"${histFilter===n?' selected':''}>${n}</option>`).join('')}
+    </select>
+  </div>`;
+
+  const sessions = histFilter === 'all'
+    ? state.history
+    : state.history.filter(h => h.exercises.some(e => e.name === histFilter));
+  const trend = histFilter === 'all' ? '' : buildTrend(histFilter);
+
+  c.innerHTML = trend + '<div class="hist-list">' + sessions.map(h => {
     const d = new Date(h.ts);
     const ds = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
     const ts = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
@@ -1391,7 +1512,7 @@ function renderHistory() {
         <span>${ds} · ${ts} · ${h.location==='gym'?'🏋️':'🏠'} · ${h.durationMin}min</span>
         <span class="hist-hdr-right">
           <span class="hist-badge">${h.totalSets} sets</span>
-          <button class="hist-del-day" onclick="deleteSession(${h.ts})" title="Delete session">🗑</button>
+          <button class="hist-del-day" onclick="deleteDay(${h.ts})" title="Delete entire day">🗑</button>
         </span>
       </div>
       <div class="hist-exs">${h.exercises.map((e, exi) => {
@@ -1558,18 +1679,20 @@ function prevRepsFor(name) {
 // ═══════════════════════
 // DELETE FROM HISTORY
 // ═══════════════════════
-// EDIT 2: confirm() removed — the 5s Undo toast is the data-loss guard.
-function deleteSession(ts) {
-  const idx = state.history.findIndex(h => h.ts === ts);
-  if (idx < 0) return;
-  const sess = state.history[idx];
-  const names = sess.exercises.map(e => e.name);
-  state.history.splice(idx, 1);
+// EDIT 2 + day-delete: confirm() removed — the 5s Undo toast is the data-loss guard.
+function deleteDay(ts) {
+  // Delete the ENTIRE calendar day (all sessions sharing that date).
+  const key = new Date(ts).toDateString();
+  const removed = state.history.filter(h => new Date(h.ts).toDateString() === key);
+  if (!removed.length) return;
+  state.history = state.history.filter(h => new Date(h.ts).toDateString() !== key);
+  const names = new Set();
+  removed.forEach(s => s.exercises.forEach(e => names.add(e.name)));
   names.forEach(n => recomputePB(n));
   save();
   renderHistory(); renderHome();
-  lastDeleted = { type: 'session', entry: sess };
-  showToast('Session deleted', 'Undo', undoDelete);
+  lastDeleted = { type: 'day', entries: removed };
+  showToast(removed.length > 1 ? `Day deleted · ${removed.length} sessions` : 'Session deleted', 'Undo', undoDelete);
 }
 function deleteHistExercise(ts, exIdx) {
   const sess = state.history.find(h => h.ts === ts);
@@ -1594,10 +1717,12 @@ function deleteHistExercise(ts, exIdx) {
 }
 function undoDelete() {
   if (!lastDeleted) return;
-  if (lastDeleted.type === 'session') {
-    state.history.push(lastDeleted.entry);
+  if (lastDeleted.type === 'day') {
+    lastDeleted.entries.forEach(en => state.history.push(en));
     state.history.sort((a, b) => b.ts - a.ts);
-    lastDeleted.entry.exercises.forEach(e => recomputePB(e.name));
+    const names = new Set();
+    lastDeleted.entries.forEach(s => s.exercises.forEach(e => names.add(e.name)));
+    names.forEach(n => recomputePB(n));
   } else {
     const { ts, exIdx, exercise, prevTotalSets, removedSession } = lastDeleted;
     if (removedSession) {
@@ -1672,6 +1797,41 @@ function doImport() {
   closeModal('import-modal');
   renderHome(); renderHistory();
   showToast('Backup restored ✓');
+}
+
+// ═══════════════════════
+// EDIT 4 — PRE-SESSION TARGET EDIT (session-scoped, not persisted to DB)
+// ═══════════════════════
+let targetEditIdx = null;
+function openTargetEdit(i) {
+  targetEditIdx = i;
+  const ex = state.todayEx[i];
+  document.getElementById('target-title').textContent = ex.name;
+  document.getElementById('target-sub').textContent =
+    (ex.unit === 'sec' ? 'Hold seconds' : 'Reps') + ' · this session only';
+  const inp = document.getElementById('target-input');
+  inp.value = ex.reps;
+  inp.step = ex.unit === 'sec' ? 5 : 1;
+  document.getElementById('target-modal').classList.add('visible');
+  setTimeout(() => inp.focus(), 100);
+}
+function stepTarget(dir) {
+  if (targetEditIdx === null) return;
+  const ex = state.todayEx[targetEditIdx];
+  const step = ex.unit === 'sec' ? 5 : 1;
+  const inp = document.getElementById('target-input');
+  let v = parseInt(inp.value);
+  if (isNaN(v)) v = ex.reps;
+  inp.value = Math.min(999, Math.max(1, v + dir * step));
+}
+function saveTarget() {
+  if (targetEditIdx === null) return;
+  let v = parseInt(document.getElementById('target-input').value);
+  if (isNaN(v) || v < 1) { showToast('Enter a valid number'); return; }
+  v = Math.min(999, v);
+  state.todayEx[targetEditIdx].reps = v; // session-scoped only; DB untouched
+  closeModal('target-modal');
+  renderHome();
 }
 
 // ═══════════════════════
@@ -1821,7 +1981,7 @@ function checkSessionMilestones() {
 // ═══════════════════════
 if ('serviceWorker' in navigator) {
   const swCode = `
-    const CACHE = 'abracadabra-v4';
+    const CACHE = 'abracadabra-v${APP_VERSION}';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
     });
@@ -1838,6 +1998,8 @@ if ('serviceWorker' in navigator) {
 // INIT
 // ═══════════════════════
 load();
+document.getElementById('version-loc').textContent = 'v' + APP_VERSION;
+document.getElementById('version-home').textContent = 'v' + APP_VERSION;
 document.getElementById('reps-input').addEventListener('input', updatePBNote);
 </script>
 </body>
