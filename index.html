@@ -1,3 +1,4 @@
+<!-- ver 3.6 07/18/2026 0018PT  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,6 +98,8 @@
   .active-num{width:40px;height:40px;border-radius:10px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:22px;font-weight:900;color:#fff;flex-shrink:0;}
   .active-title{font-family:var(--font-d);font-size:28px;font-weight:800;line-height:1.1;}
   .active-sub{font-size:13px;color:var(--text-dim);margin-top:3px;}
+  .active-info-hint{margin-top:8px;font-size:13px;color:var(--blue);font-weight:600;cursor:pointer;display:inline-block;}
+  .active-info-hint:active{color:var(--orange);}
   .tip-bar{padding:10px 18px;background:rgba(59,130,246,.07);border-bottom:1px solid var(--border);font-size:13px;color:var(--text-dim);line-height:1.5;}
   .tip-bar strong{color:var(--blue);}
   .target-display{margin:14px 18px;background:var(--surface2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
@@ -156,7 +159,7 @@
   .suggest-badge strong{font-weight:600;}
 
   /* REST OVERLAY */
-  .rest-overlay{position:fixed;inset:0;background:rgba(10,10,15,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100;}
+  .rest-overlay{position:fixed;inset:0;background:rgba(10,10,15,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:500;}
   .rest-overlay.visible{display:flex;}
   .rest-title{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;}
   .rest-big{font-family:var(--font-d);font-size:96px;font-weight:900;line-height:1;letter-spacing:-3px;color:var(--text);transition:color .2s;}
@@ -168,6 +171,10 @@
   .rest-next-name{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--blue);}
   .btn-skip-rest{padding:12px 32px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font-d);font-size:18px;font-weight:600;cursor:pointer;}
   .btn-skip-rest:active{border-color:var(--orange);}
+
+  /* REST PILL (persistent cross-screen indicator) */
+  .rest-pill{position:fixed;top:12px;right:12px;z-index:490;background:var(--orange);color:#fff;font-family:var(--font-d);font-size:15px;font-weight:700;letter-spacing:.5px;padding:8px 14px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;display:none;align-items:center;gap:6px;}
+  .rest-pill.visible{display:flex;}
 
   /* COMPLETE */
   #screen-complete{justify-content:center;align-items:center;gap:18px;padding:40px 24px;text-align:center;}
@@ -279,7 +286,7 @@
   .dur-start:active{background:#16a34a;transform:scale(.98);}
 
   /* FEATURE 5 — QUOTE OVERLAY */
-  .quote-overlay{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:300;display:none;align-items:center;justify-content:center;padding:32px;text-align:center;}
+  .quote-overlay{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:600;display:none;align-items:center;justify-content:center;padding:32px;text-align:center;}
   .quote-overlay.visible{display:flex;animation:fadeup .35s ease;}
   .quote-inner{max-width:420px;}
   .quote-mark{font-size:48px;margin-bottom:16px;}
@@ -331,7 +338,6 @@
 </style>
 </head>
 <body>
-
 <!-- LOCATION -->
 <div id="screen-location" class="screen active">
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:28px;padding:40px 24px;">
@@ -396,13 +402,6 @@
       </div>
     </div>
     <div class="setting-pill" style="flex-direction:column;align-items:flex-start;gap:6px;">
-      <div class="setting-pill-label">Auto-start</div>
-      <div class="toggle-row">
-        <label class="toggle"><input type="checkbox" id="autostart-toggle" onchange="settings.autoStart=this.checked;saveSettings()"><span class="toggle-slider"></span></label>
-        <span style="font-size:12px;color:var(--text-dim);">▶</span>
-      </div>
-    </div>
-    <div class="setting-pill" style="flex-direction:column;align-items:flex-start;gap:6px;">
       <div class="setting-pill-label">Screen on</div>
       <div class="toggle-row">
         <label class="toggle"><input type="checkbox" id="keepawake-toggle" checked onchange="settings.keepAwake=this.checked;saveSettings()"><span class="toggle-slider"></span></label>
@@ -410,13 +409,15 @@
       </div>
     </div>
   </div>
+  <!-- CHANGE 3: resume banner (shown when a session is active) -->
+  <div id="resume-banner" style="display:none;"></div>
   <div class="today-workout">
     <div class="workout-hdr">
       <div class="workout-lbl">Today's Workout</div>
       <div class="loc-tag" id="loc-tag">📍 Gym</div>
     </div>
     <div class="ex-list" id="today-ex-list"></div>
-    <button class="start-btn" onclick="startWorkout()">▶ START SESSION</button>
+    <button class="start-btn" id="main-start-btn" onclick="startWorkout()">▶ START SESSION</button>
   </div>
 </div>
 
@@ -434,8 +435,9 @@
     <div class="active-hdr">
       <div class="active-num" id="active-num">1</div>
       <div>
-        <div class="active-title" id="active-title" onclick="openInfo(state.todayEx[state.workout.exIdx].name)">—</div>
+        <div class="active-title" id="active-title" onclick="openInfoCurrent()">—</div>
         <div class="active-sub" id="active-sub">—</div>
+        <div class="active-info-hint" onclick="openInfoCurrent()">ⓘ Tips &amp; YouTube →</div>
       </div>
     </div>
     <div class="tip-bar"><strong>Tip:</strong> <span id="active-tip">—</span></div>
@@ -459,18 +461,18 @@
     <!-- TIMED mode -->
     <div id="timed-mode" style="display:none;">
       <div style="display:flex;flex-direction:column;align-items:center;padding:16px 18px;gap:12px;">
-        <!-- duration picker (FEATURE 3) -->
-        <div id="duration-picker" style="display:none;flex-direction:column;align-items:center;gap:10px;">
-          <div class="dur-lbl">Hold duration</div>
+        <!-- CHANGE 1: per-set duration picker, always shown first -->
+        <div id="set-dur-picker" style="display:none;flex-direction:column;align-items:center;gap:10px;">
+          <div class="dur-lbl">Hold duration · this set</div>
           <div class="dur-row">
-            <button class="dur-btn" onclick="adjustDuration(-5)">−5</button>
+            <button class="dur-btn" onclick="adjustSetDuration(-5)">−5</button>
             <div class="dur-val"><span id="dur-display">45</span><span class="dur-unit">sec</span></div>
-            <button class="dur-btn" onclick="adjustDuration(5)">+5</button>
+            <button class="dur-btn" onclick="adjustSetDuration(5)">+5</button>
           </div>
-          <button class="dur-start" onclick="startTimedExercise()">▶ Start</button>
+          <button class="dur-start" onclick="startTimedSet()">▶ Start Set</button>
         </div>
         <!-- prestart -->
-        <div id="prestart-area" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div id="prestart-area" style="display:none;flex-direction:column;align-items:center;gap:8px;">
           <div class="countdown-prestart" id="prestart-num">5</div>
           <div class="countdown-prestart-lbl">Starting in…</div>
         </div>
@@ -551,8 +553,14 @@
     <div class="rest-next-lbl">Up next</div>
     <div class="rest-next-name" id="rest-next-name">—</div>
   </div>
-  <button class="btn-skip-rest" onclick="skipRest()">Skip Rest →</button>
+  <div style="display:flex;gap:10px;">
+    <button class="btn-skip-rest" onclick="hideRestOverlay()" style="background:none;">▽ Minimize</button>
+    <button class="btn-skip-rest" onclick="skipRest()">Skip Rest →</button>
+  </div>
 </div>
+
+<!-- REST PILL (CHANGE 4) -->
+<div class="rest-pill" id="rest-pill" onclick="showRestOverlay()">⏱ REST <span id="rest-pill-num">0</span>s</div>
 
 <!-- SWAP MODAL -->
 <div class="modal-overlay" id="swap-modal" onclick="closeModal('swap-modal',event)">
@@ -564,6 +572,17 @@
       <div class="reason-list" id="reason-list"></div>
     </div>
     <div id="swap-opts-list"></div>
+  </div>
+</div>
+
+<!-- SESSION SWAP MODAL (CHANGE 3 — hardware back trap) -->
+<div class="modal-overlay" id="session-swap-modal" style="z-index:510;" onclick="closeModal('session-swap-modal',event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Swap current exercise?</div>
+    <div class="edit-sub" style="margin-bottom:12px;">Swapping resets this exercise's sets to zero.</div>
+    <div id="session-swap-opts"></div>
+    <button class="edit-cancel" style="width:100%;padding:14px;margin-top:8px;" onclick="closeModal('session-swap-modal')">Keep current exercise</button>
   </div>
 </div>
 
@@ -669,7 +688,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.6';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -794,7 +813,6 @@ let settings = {
   defaultRest: 60,
   prestartSec: 5,
   audio: true,
-  autoStart: false,   // FEATURE 3: timed exercises wait for Start tap unless ON
   keepAwake: true,    // FEATURE 4: wake lock
 };
 
@@ -869,6 +887,7 @@ function adjustRest(delta) {
   const rem = Math.min(180, Math.max(5, Math.ceil((restEndTs - Date.now())/1000) + delta));
   restEndTs = Date.now() + rem * 1000;
   document.getElementById('rest-num').textContent = rem;
+  const pill = document.getElementById('rest-pill-num'); if (pill) pill.textContent = rem;
 }
 
 // ═══════════════════════
@@ -935,7 +954,6 @@ function applySettings() {
   document.getElementById('rest-setting-display').textContent = settings.defaultRest + 's';
   document.getElementById('prestart-select').value = settings.prestartSec;
   document.getElementById('audio-toggle').checked = settings.audio;
-  document.getElementById('autostart-toggle').checked = settings.autoStart;
   document.getElementById('keepawake-toggle').checked = settings.keepAwake;
 }
 
@@ -957,6 +975,23 @@ function renderHome() {
   document.getElementById('stat-sets').textContent = totalSets;
   document.getElementById('streak-badge').textContent = `🔥 ${str} day${str!==1?'s':''}`;
   document.getElementById('streak-badge-hist').textContent = `🔥 ${str} day${str!==1?'s':''}`;
+
+  // CHANGE 3: resume banner vs start button
+  const rb = document.getElementById('resume-banner');
+  const sb = document.getElementById('main-start-btn');
+  if (state.workout && state.workout.active) {
+    if (sb) sb.style.display = 'none';
+    rb.style.display = 'block';
+    rb.innerHTML = `<div style="margin:16px 20px 0;background:rgba(255,107,43,.1);border:1px solid rgba(255,107,43,.4);border-radius:16px;padding:16px 18px;">
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--orange);line-height:1;">Session in progress</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-top:5px;">You have an active workout. Pick up where you left off.</div>
+      <button class="start-btn" style="margin:14px 0 0;width:100%;" onclick="resumeWorkout()">▶ RESUME SESSION</button>
+    </div>`;
+  } else {
+    rb.style.display = 'none';
+    rb.innerHTML = '';
+    if (sb) sb.style.display = '';
+  }
 
   // Overload banner
   const sugs = getOverloadSuggestions();
@@ -1061,6 +1096,17 @@ function startWorkout() {
     timerOverride: {}, repMilestones: [],
   };
   requestWakeLock(); // FEATURE 4
+  history.pushState({workout:true}, ''); // CHANGE 3: hardware-back trap
+  showScreen('workout');
+  document.getElementById('bottom-nav').style.display = 'none';
+  renderWorkoutStep();
+}
+
+// CHANGE 3: return to an in-progress session from the home resume banner
+function resumeWorkout() {
+  if (!state.workout.active) { renderHome(); return; }
+  requestWakeLock();
+  history.pushState({workout:true}, '');
   showScreen('workout');
   document.getElementById('bottom-nav').style.display = 'none';
   renderWorkoutStep();
@@ -1111,20 +1157,15 @@ function renderWorkoutStep() {
   } else { prevEl.style.display = 'none'; prevEl.innerHTML = ''; }
 
   if (ex.unit === 'sec') {
+    // CHANGE 1: always show the per-set duration picker first; prestart only after Start Set tap
     document.getElementById('reps-mode').style.display = 'none';
     document.getElementById('timed-mode').style.display = 'block';
     document.getElementById('timed-set-display').textContent = `${w.setIdx+1}/3`;
     document.getElementById('btn-done').disabled = true;
     document.getElementById('prestart-area').style.display = 'none';
     document.getElementById('exercise-timer-area').style.display = 'none';
-    const picker = document.getElementById('duration-picker');
-    document.getElementById('dur-display').textContent = timedDuration(w.exIdx);
-    if (settings.autoStart) {
-      picker.style.display = 'none';
-      startPrestart(timedDuration(w.exIdx)); // FEATURE 3: auto-start ON = old behavior
-    } else {
-      picker.style.display = 'flex'; // wait for Start tap
-    }
+    document.getElementById('set-dur-picker').style.display = 'flex';
+    document.getElementById('dur-display').textContent = timedDuration(w.exIdx, w.setIdx);
   } else {
     document.getElementById('timed-mode').style.display = 'none';
     document.getElementById('reps-mode').style.display = 'block';
@@ -1232,13 +1273,13 @@ function completeSet() {
   const w = state.workout;
   const ex = state.todayEx[w.exIdx];
 
-  // Log reps if rep-based, else the chosen hold duration
+  // Log reps if rep-based, else the chosen hold duration for THIS set (CHANGE 1)
   let logged = null;
   if (ex.unit === 'reps') {
     const v = parseInt(document.getElementById('reps-input').value);
     logged = isNaN(v) ? ex.reps : v;
   } else {
-    logged = timedDuration(w.exIdx);
+    logged = timedDuration(w.exIdx, w.setIdx);
   }
 
   // FEATURE 5: detect first-ever PR before store updates
@@ -1319,8 +1360,10 @@ function exitWorkout() {
   if (confirm('Quit this session?')) {
     clearTimers(); clearInterval(restTimer);
     document.getElementById('rest-overlay').classList.remove('visible');
+    updateRestPill(false); // CHANGE 4
     state.workout.active = false;
     releaseWakeLock(); // FEATURE 4
+    renderHome(); // CHANGE 3: refresh resume banner vs start button
     showScreen('home');
     document.getElementById('bottom-nav').style.display = 'flex';
   }
@@ -1335,6 +1378,7 @@ function showRest(sec, nextName) {
   restEndTs = Date.now() + clamped * 1000; // EDIT 3: end timestamp
   document.getElementById('rest-next-name').textContent = nextName;
   document.getElementById('rest-overlay').classList.add('visible');
+  updateRestPill(true); // CHANGE 4
   clearInterval(restTimer);
   paintRest();
   restTimer = setInterval(tickRest, 250);
@@ -1344,15 +1388,18 @@ function paintRest() {
   const numEl = document.getElementById('rest-num');
   numEl.textContent = rem;
   numEl.className = rem <= 3 ? 'rest-big tick' : 'rest-big normal';
+  const pill = document.getElementById('rest-pill-num'); if (pill) pill.textContent = rem;
 }
 function tickRest() {
   const rem = Math.max(0, Math.ceil((restEndTs - Date.now()) / 1000));
   const numEl = document.getElementById('rest-num');
   numEl.textContent = rem;
   numEl.className = rem <= 3 ? 'rest-big tick' : 'rest-big normal';
+  const pill = document.getElementById('rest-pill-num'); if (pill) pill.textContent = rem;
   if (rem <= 0) {
     clearInterval(restTimer); restTimer = null;
     document.getElementById('rest-overlay').classList.remove('visible');
+    updateRestPill(false); // CHANGE 4
     playChime('rest');
     haptic([100, 50, 100]);
     renderWorkoutStep(); // BUG FIX: render the next set fresh after rest
@@ -1361,7 +1408,20 @@ function tickRest() {
 function skipRest() {
   clearInterval(restTimer); restTimer = null;
   document.getElementById('rest-overlay').classList.remove('visible');
+  updateRestPill(false); // CHANGE 4
   renderWorkoutStep(); // BUG FIX: render next set on manual skip
+}
+// CHANGE 4: minimize/reshow the rest overlay while the timer keeps running behind the pill
+function hideRestOverlay() {
+  document.getElementById('rest-overlay').classList.remove('visible');
+}
+function showRestOverlay() {
+  if (restTimer) document.getElementById('rest-overlay').classList.add('visible');
+}
+function updateRestPill(show) {
+  const p = document.getElementById('rest-pill');
+  if (!p) return;
+  if (show) p.classList.add('visible'); else p.classList.remove('visible');
 }
 
 // ═══════════════════════
@@ -1370,6 +1430,7 @@ function skipRest() {
 function finishWorkout() {
   clearTimers(); clearInterval(restTimer);
   document.getElementById('rest-overlay').classList.remove('visible');
+  updateRestPill(false); // CHANGE 4
   const w = state.workout;
   const elapsed = Math.round((Date.now() - w.startTime) / 60000);
   const totalSets = w.setsCompleted.flat().filter(Boolean).length;
@@ -1548,7 +1609,7 @@ function navTo(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('nav-'+tab).classList.add('active');
   if (tab === 'history') { renderHistory(); showScreen('history'); }
-  else showScreen('home');
+  else { renderHome(); showScreen('home'); } // CHANGE 3: refresh resume banner state
 }
 
 // ═══════════════════════
@@ -1589,6 +1650,11 @@ function openInfo(name) {
   if (navigator.onLine) { yt.classList.remove('offline'); }
   else { yt.classList.add('offline'); }
   document.getElementById('info-modal').classList.add('visible');
+}
+// CHANGE 2: reach the info modal from the active workout screen
+function openInfoCurrent() {
+  if (!state.workout.active) return;
+  openInfo(state.todayEx[state.workout.exIdx].name);
 }
 function infoToggleDesc() {
   const d = document.getElementById('info-desc');
@@ -1855,22 +1921,64 @@ function preloadAnswer(yes) {
 }
 
 // ═══════════════════════
-// FEATURE 3 — DURATION PICKER
+// CHANGE 1 — PER-SET DURATION PICKER (in-session)
 // ═══════════════════════
-function timedDuration(exIdx) {
-  const ov = state.workout.timerOverride[exIdx];
+// Per-set override keyed "exIdx_setIdx". Falls back to the exercise's target.
+function timedDuration(exIdx, setIdx) {
+  const k = exIdx + '_' + setIdx;
+  const ov = state.workout.timerOverride[k];
   return ov != null ? ov : state.todayEx[exIdx].reps;
 }
-function adjustDuration(delta) {
+function adjustSetDuration(delta) {
   const w = state.workout;
-  let d = timedDuration(w.exIdx) + delta;
+  let d = timedDuration(w.exIdx, w.setIdx) + delta;
   d = Math.min(300, Math.max(5, d));
-  w.timerOverride[w.exIdx] = d;
+  w.timerOverride[w.exIdx + '_' + w.setIdx] = d;
   document.getElementById('dur-display').textContent = d;
 }
-function startTimedExercise() {
-  document.getElementById('duration-picker').style.display = 'none';
-  startPrestart(timedDuration(state.workout.exIdx));
+function startTimedSet() {
+  document.getElementById('set-dur-picker').style.display = 'none';
+  startPrestart(timedDuration(state.workout.exIdx, state.workout.setIdx));
+}
+
+// ═══════════════════════
+// CHANGE 3 — HARDWARE BACK BUTTON → SESSION SWAP
+// ═══════════════════════
+window.addEventListener('popstate', () => {
+  if (state.workout.active) {
+    history.pushState({workout:true}, ''); // re-arm the trap
+    openSessionSwap();
+  }
+});
+function openSessionSwap() {
+  const w = state.workout;
+  const ex = state.todayEx[w.exIdx];
+  const opts = DB[ex.group].filter(e => (state.location==='gym'?e.gym:e.home) && e.name !== ex.name);
+  const ol = document.getElementById('session-swap-opts');
+  ol.innerHTML = opts.length ? opts.map(o =>
+    `<div class="swap-opt" onclick="doSessionSwap('${o.name.replace(/'/g,"\\'")}')">
+      <div class="swap-opt-name">${o.name}</div>
+      <div class="swap-opt-det">${o.unit==='sec'?`3×${o.reps}s`:`3×${o.reps} reps`}</div>
+    </div>`
+  ).join('') : '<div style="color:var(--text-dim);font-size:14px;">No alternatives for this location.</div>';
+  document.getElementById('session-swap-modal').classList.add('visible');
+}
+function doSessionSwap(name) {
+  const w = state.workout;
+  const ex = state.todayEx[w.exIdx];
+  const newEx = DB[ex.group].find(e => e.name === name);
+  if (newEx) state.todayEx[w.exIdx] = { ...newEx, group: ex.group };
+  // reset this exercise's sets + clear its per-set duration overrides
+  w.setsCompleted[w.exIdx] = [false, false, false];
+  w.setLoggedReps[w.exIdx] = [null, null, null];
+  w.setIdx = 0;
+  Object.keys(w.timerOverride).forEach(k => { if (k.indexOf(w.exIdx + '_') === 0) delete w.timerOverride[k]; });
+  clearTimers();
+  document.getElementById('rest-overlay').classList.remove('visible');
+  updateRestPill(false);
+  clearInterval(restTimer); restTimer = null;
+  closeModal('session-swap-modal');
+  renderWorkoutStep();
 }
 
 // ═══════════════════════
