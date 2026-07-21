@@ -462,7 +462,11 @@
     <!-- REPS mode -->
     <div id="reps-mode">
       <div class="target-display">
-        <div><div class="target-big" id="target-num">12</div><div class="target-unit" id="target-unit">reps</div></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="dur-btn" onclick="adjustRepsTarget(-1)">−</button>
+          <div><div class="target-big" id="target-num">12</div><div class="target-unit" id="target-unit">reps</div></div>
+          <button class="dur-btn" onclick="adjustRepsTarget(1)">+</button>
+        </div>
         <div style="text-align:right;"><div style="font-size:13px;color:var(--text-dim);">Set</div><div style="font-family:var(--font-d);font-size:28px;font-weight:800;" id="set-display">1/3</div></div>
       </div>
       <div class="log-input-row">
@@ -704,7 +708,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '3.7';
+const APP_VERSION = '3.8';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -815,10 +819,11 @@ const SWAP_REASONS = [
 let state = {
   location: null,
   todayEx: [],
-  workout: {active:false,exIdx:0,setIdx:0,setsCompleted:[],setLoggedReps:[],startTime:null,timerOverride:{},repMilestones:[]},
+  workout: {active:false,exIdx:0,setIdx:0,setsCompleted:[],setLoggedReps:[],startTime:null,timerOverride:{},repMilestones:[],currentTarget:{}},
   history: [],
   pbs: {}, // {exName: {reps, sec}} best ever per set
   milestones: {}, // FEATURE 5: {streak7:true, streak30:true, sets100:true, week5:true, firstPR:true}
+  lastUsed: {}, // BACKLOG 2: {exName: lastLoggedValue} — becomes next session's default target
 };
 
 let wakeLock = null; // FEATURE 4
@@ -848,6 +853,7 @@ function save() {
     localStorage.setItem('abra_pbs', JSON.stringify(state.pbs));
     localStorage.setItem('abra_settings', JSON.stringify(settings));
     localStorage.setItem('abra_milestones', JSON.stringify(state.milestones));
+    localStorage.setItem('abra_lastused', JSON.stringify(state.lastUsed));
   } catch(e) {}
 }
 function load() {
@@ -856,6 +862,7 @@ function load() {
     const p = localStorage.getItem('abra_pbs'); if(p) state.pbs = JSON.parse(p);
     const s = localStorage.getItem('abra_settings'); if(s) Object.assign(settings, JSON.parse(s));
     const m = localStorage.getItem('abra_milestones'); if(m) state.milestones = JSON.parse(m);
+    const lu = localStorage.getItem('abra_lastused'); if(lu) state.lastUsed = JSON.parse(lu);
   } catch(e) {}
 }
 
@@ -888,6 +895,22 @@ function playChime(type = 'rest') {
 function haptic(pattern = [50]) {
   try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {}
 }
+// BACKLOG 1: short audible tick for the last 3 seconds of the prestart countdown
+function playTick() {
+  if (!settings.audio) return;
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'square';
+    const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    osc.start(t); osc.stop(t + 0.08);
+  } catch(e) {}
+}
 
 // ═══════════════════════
 // SETTINGS
@@ -919,7 +942,11 @@ function pickEx(group, loc, exclude) {
   const pool = DB[group].filter(e => (loc === 'gym' ? e.gym : e.home) && !exclude.has(e.name));
   const fallback = DB[group].filter(e => loc === 'gym' ? e.gym : e.home);
   const src = pool.length ? pool : fallback;
-  return { ...src[Math.floor(Math.random() * src.length)], group };
+  const chosen = { ...src[Math.floor(Math.random() * src.length)], group };
+  // BACKLOG 2: default to last time's actual value instead of the catalog default, if we have one
+  const last = state.lastUsed[chosen.name];
+  if (last != null) chosen.reps = last;
+  return chosen;
 }
 function generateWorkout(loc) {
   const recent = recentNames(7);
@@ -1110,6 +1137,7 @@ function startWorkout() {
     setLoggedReps: state.todayEx.map(() => [null,null,null]),
     startTime: Date.now(),
     timerOverride: {}, repMilestones: [],
+    currentTarget: {}, // BACKLOG 2/3: {exIdx: liveTargetValue} — carries an adjustment forward across sets of the same exercise
   };
   requestWakeLock(); // FEATURE 4
   history.pushState({workout:true}, ''); // CHANGE 3: hardware-back trap
@@ -1185,7 +1213,7 @@ function renderWorkoutStep() {
   } else {
     document.getElementById('timed-mode').style.display = 'none';
     document.getElementById('reps-mode').style.display = 'block';
-    document.getElementById('target-num').textContent = ex.reps;
+    document.getElementById('target-num').textContent = repsTarget(w.exIdx);
     document.getElementById('target-unit').textContent = 'reps';
     document.getElementById('set-display').textContent = `${w.setIdx+1}/3`;
     document.getElementById('btn-done').disabled = false;
@@ -1231,6 +1259,7 @@ function tickPrestart() {
     startExerciseTimer(prestartTargetSec);
   } else {
     haptic([30]);
+    if (rem <= 3) playTick(); // BACKLOG 1: audible tick, last 3 seconds
   }
 }
 
@@ -1293,10 +1322,15 @@ function completeSet() {
   let logged = null;
   if (ex.unit === 'reps') {
     const v = parseInt(document.getElementById('reps-input').value);
-    logged = isNaN(v) ? ex.reps : v;
+    logged = isNaN(v) ? repsTarget(w.exIdx) : v;
   } else {
     logged = timedDuration(w.exIdx, w.setIdx);
   }
+  // BACKLOG 2/3: carry this set's actual value forward — next set (this session) and next
+  // time this exercise comes up (via state.lastUsed, persisted below) both default to it.
+  w.currentTarget[w.exIdx] = logged;
+  state.lastUsed[ex.name] = logged;
+  save();
 
   // FEATURE 5: detect first-ever PR before store updates
   const prevPB = state.pbs[ex.name];
@@ -1939,18 +1973,31 @@ function preloadAnswer(yes) {
 // ═══════════════════════
 // CHANGE 1 — PER-SET DURATION PICKER (in-session)
 // ═══════════════════════
-// Per-set override keyed "exIdx_setIdx". Falls back to the exercise's target.
+// BACKLOG 2: live per-exercise target, carries forward from set to set within the session.
+// Falls back to the exercise's session target (which itself defaults from lastUsed — see pickEx).
 function timedDuration(exIdx, setIdx) {
-  const k = exIdx + '_' + setIdx;
-  const ov = state.workout.timerOverride[k];
-  return ov != null ? ov : state.todayEx[exIdx].reps;
+  const ct = state.workout.currentTarget[exIdx];
+  return ct != null ? ct : state.todayEx[exIdx].reps;
 }
 function adjustSetDuration(delta) {
   const w = state.workout;
   let d = timedDuration(w.exIdx, w.setIdx) + delta;
   d = Math.min(300, Math.max(5, d));
-  w.timerOverride[w.exIdx + '_' + w.setIdx] = d;
+  w.currentTarget[w.exIdx] = d;
   document.getElementById('dur-display').textContent = d;
+}
+// BACKLOG 3: same live-target mechanism for rep-based exercises (e.g. Hanging Leg Raise),
+// so the target is adjustable pre-set rather than only entered after finishing.
+function repsTarget(exIdx) {
+  const ct = state.workout.currentTarget[exIdx];
+  return ct != null ? ct : state.todayEx[exIdx].reps;
+}
+function adjustRepsTarget(delta) {
+  const w = state.workout;
+  let v = repsTarget(w.exIdx) + delta;
+  v = Math.min(999, Math.max(1, v));
+  w.currentTarget[w.exIdx] = v;
+  document.getElementById('target-num').textContent = v;
 }
 function startTimedSet() {
   document.getElementById('set-dur-picker').style.display = 'none';
@@ -2190,6 +2237,16 @@ checkEmailModal();
 document.getElementById('version-loc').textContent = 'v' + APP_VERSION;
 document.getElementById('version-home').textContent = 'v' + APP_VERSION;
 document.getElementById('reps-input').addEventListener('input', updatePBNote);
+// BACKLOG 4: Enter key on numeric inputs commits the value and dismisses the keyboard
+document.getElementById('reps-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+document.getElementById('target-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveTarget(); }
+});
+document.getElementById('edit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveEditSet(); }
+});
 </script>
 <!-- EMAIL CAPTURE MODAL -->
 <div id="email-modal-overlay">
