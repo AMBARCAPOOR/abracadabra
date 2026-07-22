@@ -37,6 +37,8 @@
   #email-modal .em-skip{font-size:12px;color:var(--text-dim);cursor:pointer;text-decoration:underline;display:block;margin-bottom:6px;}
   #email-modal .em-never{font-size:11px;color:var(--border);cursor:pointer;text-decoration:underline;display:block;}
   #email-modal .em-status{font-size:12px;margin-top:10px;min-height:16px;color:var(--green);}
+  #ideas-fab{position:fixed;bottom:78px;right:12px;z-index:19;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font-d);font-size:11px;font-weight:900;color:var(--orange);letter-spacing:1px;cursor:pointer;opacity:0.55;transition:opacity .2s;text-decoration:none;}
+  #ideas-fab:active{opacity:1;}
 
   /* HEADER */
   .app-header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border);}
@@ -695,6 +697,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- BOTTOM NAV -->
+<a id="ideas-fab" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
 <nav class="bottom-nav" id="bottom-nav" style="display:none">
   <button class="nav-item active" id="nav-home" onclick="navTo('home')">
     <span class="nav-icon">💪</span><span class="nav-lbl">Today</span>
@@ -708,7 +711,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.5';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -2285,6 +2288,7 @@ document.getElementById('edit-input').addEventListener('keydown', e => {
     <div class="em-logo">AB<span class="o">r</span>a<span class="b">c</span>adABra</div>
     <h2>Stay in the loop</h2>
     <p>Get occasional workout tips &amp; app updates.<br>No spam. Unsubscribe anytime.</p>
+    <p style="font-size:10px;color:var(--text-dim);opacity:0.7;margin:-10px 0 14px;line-height:1.4;">Your data is never sold. Ever. Anonymous usage helps us improve the app — that's it.</p>
     <input type="email" id="em-input" placeholder="your@email.com" autocomplete="email" inputmode="email">
     <button class="em-submit" onclick="submitEmail()">GET UPDATES</button>
     <span class="em-skip" onclick="dismissEmailModal(false)">Maybe later</span>
