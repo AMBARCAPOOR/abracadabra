@@ -37,8 +37,8 @@
   #email-modal .em-skip{font-size:12px;color:var(--text-dim);cursor:pointer;text-decoration:underline;display:block;margin-bottom:6px;}
   #email-modal .em-never{font-size:11px;color:var(--border);cursor:pointer;text-decoration:underline;display:block;}
   #email-modal .em-status{font-size:12px;margin-top:10px;min-height:16px;color:var(--green);}
-  #ideas-fab{position:fixed;bottom:78px;right:12px;z-index:19;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font-d);font-size:11px;font-weight:900;color:var(--orange);letter-spacing:1px;cursor:pointer;opacity:0.55;transition:opacity .2s;text-decoration:none;}
-  #ideas-fab:active{opacity:1;}
+  .header-ideas{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:4px 10px;font-family:var(--font-d);font-size:10px;font-weight:900;color:var(--orange);letter-spacing:1px;cursor:pointer;opacity:0.7;transition:opacity .2s;text-decoration:none;white-space:nowrap;flex-shrink:0;}
+  .header-ideas:active{opacity:1;}
 
   /* HEADER */
   .app-header{padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border);}
@@ -379,6 +379,7 @@
 <div id="screen-home" class="screen">
   <div class="app-header">
     <div class="logo"><span class="o">AB</span>racad<span class="b">AB</span>ra</div>
+    <a class="header-ideas" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
     <div class="streak-badge" id="streak-badge">🔥 0 days</div>
   </div>
   <div class="home-hero">
@@ -442,7 +443,11 @@
 <!-- WORKOUT -->
 <div id="screen-workout" class="screen">
   <div class="app-header">
-    <div class="logo" style="font-size:20px;"><span class="o">AB</span>racad<span class="b">AB</span>ra</div>
+    <div>
+      <div class="logo" style="font-size:20px;"><span class="o">AB</span>racad<span class="b">AB</span>ra</div>
+      <div class="version-tag" id="version-workout" style="text-align:left;margin-top:1px;font-size:9px;"></div>
+    </div>
+    <a class="header-ideas" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
     <button onclick="exitWorkout()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:var(--font-b);">Quit</button>
   </div>
   <div class="workout-top">
@@ -476,6 +481,10 @@
           <div class="log-input-label">Reps done this set</div>
           <input class="log-input" id="reps-input" type="number" inputmode="numeric" min="0" max="999" placeholder="—">
           <div class="log-input-label log-pb-note" id="pb-note"></div>
+        </div>
+        <div class="log-input-wrap" id="weight-input-wrap" style="display:none;flex:0 0 104px;">
+          <div class="log-input-label">Weight lb</div>
+          <input class="log-input" id="weight-input" type="number" inputmode="decimal" min="0" max="999" step="2.5" placeholder="—">
         </div>
       </div>
     </div>
@@ -546,6 +555,7 @@
 <div id="screen-history" class="screen">
   <div class="app-header">
     <div class="logo" style="font-size:22px;"><span class="o">AB</span>racad<span class="b">AB</span>ra</div>
+    <a class="header-ideas" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
     <div class="streak-badge" id="streak-badge-hist">🔥 0 days</div>
   </div>
   <div class="sec-title">Workout History</div>
@@ -631,6 +641,10 @@
     <div class="modal-title" id="edit-title">Edit Set</div>
     <div class="edit-sub" id="edit-sub">Set 1</div>
     <input class="edit-input" id="edit-input" type="number" inputmode="numeric" min="0" max="999" placeholder="—">
+    <div id="edit-weight-wrap" style="display:none;margin-top:-6px;">
+      <div class="edit-sub">Weight (lbs)</div>
+      <input class="edit-input" id="edit-weight-input" type="number" inputmode="decimal" min="0" max="999" step="2.5" placeholder="—">
+    </div>
     <div class="edit-actions">
       <button class="edit-cancel" onclick="closeModal('edit-modal')">Cancel</button>
       <button class="edit-save" onclick="saveEditSet()">Save</button>
@@ -697,7 +711,6 @@
 <div class="toast" id="toast"></div>
 
 <!-- BOTTOM NAV -->
-<a id="ideas-fab" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
 <nav class="bottom-nav" id="bottom-nav" style="display:none">
   <button class="nav-item active" id="nav-home" onclick="navTo('home')">
     <span class="nav-icon">💪</span><span class="nav-lbl">Today</span>
@@ -711,21 +724,21 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '4.5';
+const APP_VERSION = '4.7';
 
 // ═══════════════════════
 // EXERCISE DATABASE
 // ═══════════════════════
 const DB = {
   upper:[
-    {name:'Weighted Crunches',sets:3,reps:15,unit:'reps',tip:'Hold weight at chest. 2-second descent. Exhale at top.',gym:true,home:true},
+    {name:'Weighted Crunches',sets:3,reps:15,unit:'reps',tip:'Hold weight at chest. 2-second descent. Exhale at top.',gym:true,home:true,weighted:true},
     {name:'Overhead Sit-Up',sets:3,reps:15,unit:'reps',tip:'Arms locked overhead throughout. Engage core before moving.',gym:true,home:true},
-    {name:'Medicine Ball Crunches',sets:3,reps:15,unit:'reps',tip:'Throw the ball on the crunch if a wall is available. Otherwise hold overhead.',gym:true,home:false},
+    {name:'Medicine Ball Crunches',sets:3,reps:15,unit:'reps',tip:'Throw the ball on the crunch if a wall is available. Otherwise hold overhead.',gym:true,home:false,weighted:true},
     {name:'Stability Ball Crunch',sets:3,reps:20,unit:'reps',tip:'Let your back arch over the ball for full range. Greater ROM = more muscle.',gym:true,home:false},
     {name:'Decline Sit-Up',sets:3,reps:12,unit:'reps',tip:'Control the descent. Don\'t yank your neck.',gym:true,home:false},
     {name:'Bodyweight Crunches',sets:3,reps:25,unit:'reps',tip:'Exhale hard at top. Short range of motion is fine — the squeeze counts.',gym:true,home:true},
     {name:'Ab Wheel Rollout',sets:3,reps:10,unit:'reps',tip:'Brace like you\'re about to be punched. Don\'t let hips sag.',gym:true,home:true},
-    {name:'Cable Crunch',sets:3,reps:15,unit:'reps',tip:'Pull with abs, not arms. Elbows fixed. Round the spine.',gym:true,home:false},
+    {name:'Cable Crunch',sets:3,reps:15,unit:'reps',tip:'Pull with abs, not arms. Elbows fixed. Round the spine.',gym:true,home:false,weighted:true},
   ],
   lower:[
     {name:'Hanging Leg Raise',sets:3,reps:12,unit:'reps',tip:'No swinging. Posterior tilt at the top = full contraction.',gym:true,home:false},
@@ -741,23 +754,23 @@ const DB = {
   oblique:[
     {name:'Oblique Crunches',sets:3,reps:16,unit:'reps',tip:'Per side. Drive elbow toward opposite knee. Slow tempo.',gym:true,home:true},
     {name:'Russian Twist',sets:3,reps:20,unit:'reps',tip:'Per side. Feet elevated makes it harder. Touch floor each side.',gym:true,home:true},
-    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Per side. Control the weight — don\'t let momentum do the work.',gym:true,home:true},
+    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Per side. Control the weight — don\'t let momentum do the work.',gym:true,home:true,weighted:true},
     {name:'Hanging Around the World',sets:3,reps:10,unit:'reps',tip:'Full circular leg path. Each direction = 1 rep.',gym:true,home:false},
     {name:'Hanging Pendulum',sets:3,reps:12,unit:'reps',tip:'Legs together, swing side to side with control.',gym:true,home:false},
     {name:'Side Plank',sets:3,reps:35,unit:'sec',tip:'Per side. Stack feet or stagger for balance. Drive hips up.',gym:true,home:true},
-    {name:'Woodchopper',sets:3,reps:12,unit:'reps',tip:'Per side. Rotate through core, not arms. Slow the return.',gym:true,home:false},
+    {name:'Woodchopper',sets:3,reps:12,unit:'reps',tip:'Per side. Rotate through core, not arms. Slow the return.',gym:true,home:false,weighted:true},
     {name:'Bicycle Crunches',sets:3,reps:20,unit:'reps',tip:'Per side. Slow it down. Full rotation — opposite elbow to knee.',gym:true,home:true},
   ],
   core:[
     {name:'Plank',sets:3,reps:45,unit:'sec',tip:'Squeeze glutes, brace abs, neutral spine. Don\'t let hips drop or pike.',gym:true,home:true},
     {name:'Dead Bug',sets:3,reps:10,unit:'reps',tip:'Per side. Press lower back into floor throughout.',gym:true,home:true},
-    {name:'Pallof Press',sets:3,reps:12,unit:'reps',tip:'Per side. Anti-rotation. Don\'t let the cable pull you.',gym:true,home:false},
+    {name:'Pallof Press',sets:3,reps:12,unit:'reps',tip:'Per side. Anti-rotation. Don\'t let the cable pull you.',gym:true,home:false,weighted:true},
     {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Per side. Extend opposite arm/leg. Don\'t rotate hips.',gym:true,home:true},
     {name:'Mountain Climbers',sets:3,reps:40,unit:'sec',tip:'Hips stay level throughout. Fast or slow both work.',gym:true,home:true},
     {name:'Hanging L-Sit Hold',sets:3,reps:25,unit:'sec',tip:'Legs parallel to floor, toes pointed. Every second is a win.',gym:true,home:false},
   ],
   posterior:[
-    {name:'Back Extension',sets:3,reps:15,unit:'reps',tip:'Don\'t hyperextend at top. Squeeze glutes. Weight optional.',gym:true,home:false},
+    {name:'Back Extension',sets:3,reps:15,unit:'reps',tip:'Don\'t hyperextend at top. Squeeze glutes. Weight optional.',gym:true,home:false,weighted:true},
     {name:'Superman',sets:3,reps:40,unit:'sec',tip:'Hold position. Squeeze glutes and lower back. Chest off floor.',gym:true,home:true},
     {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Control every inch. Pause at full extension.',gym:true,home:true},
   ]
@@ -822,11 +835,12 @@ const SWAP_REASONS = [
 let state = {
   location: null,
   todayEx: [],
-  workout: {active:false,exIdx:0,setIdx:0,setsCompleted:[],setLoggedReps:[],startTime:null,timerOverride:{},repMilestones:[],currentTarget:{}},
+  workout: {active:false,exIdx:0,setIdx:0,setsCompleted:[],setLoggedReps:[],setLoggedWeight:[],startTime:null,timerOverride:{},repMilestones:[],currentTarget:{},currentWeight:{}},
   history: [],
   pbs: {}, // {exName: {reps, sec}} best ever per set
   milestones: {}, // FEATURE 5: {streak7:true, streak30:true, sets100:true, week5:true, firstPR:true}
   lastUsed: {}, // BACKLOG 2: {exName: lastLoggedValue} — becomes next session's default target
+  lastUsedWeight: {}, // WEIGHT TRACKING: {exName: lastLoggedWeightLb} — becomes next session's default weight, weighted:true exercises only
 };
 
 let wakeLock = null; // FEATURE 4
@@ -857,6 +871,7 @@ function save() {
     localStorage.setItem('abra_settings', JSON.stringify(settings));
     localStorage.setItem('abra_milestones', JSON.stringify(state.milestones));
     localStorage.setItem('abra_lastused', JSON.stringify(state.lastUsed));
+    localStorage.setItem('abra_lastusedweight', JSON.stringify(state.lastUsedWeight));
   } catch(e) {}
 }
 function load() {
@@ -866,6 +881,7 @@ function load() {
     const s = localStorage.getItem('abra_settings'); if(s) Object.assign(settings, JSON.parse(s));
     const m = localStorage.getItem('abra_milestones'); if(m) state.milestones = JSON.parse(m);
     const lu = localStorage.getItem('abra_lastused'); if(lu) state.lastUsed = JSON.parse(lu);
+    const luw = localStorage.getItem('abra_lastusedweight'); if(luw) state.lastUsedWeight = JSON.parse(luw);
   } catch(e) {}
 }
 
@@ -1138,9 +1154,11 @@ function startWorkout() {
     active: true, exIdx: 0, setIdx: 0,
     setsCompleted: state.todayEx.map(() => [false,false,false]),
     setLoggedReps: state.todayEx.map(() => [null,null,null]),
+    setLoggedWeight: state.todayEx.map(() => [null,null,null]), // WEIGHT TRACKING: per-set lb, weighted:true exercises only
     startTime: Date.now(),
     timerOverride: {}, repMilestones: [],
     currentTarget: {}, // BACKLOG 2/3: {exIdx: liveTargetValue} — carries an adjustment forward across sets of the same exercise
+    currentWeight: {}, // WEIGHT TRACKING: {exIdx: liveWeightLb} — carries forward across sets of the same exercise
   };
   requestWakeLock(); // FEATURE 4
   history.pushState({workout:true}, ''); // CHANGE 3: hardware-back trap
@@ -1187,11 +1205,12 @@ function renderWorkoutStep() {
     const done = w.setsCompleted[w.exIdx][s];
     const active = s === w.setIdx && !done;
     const logged = w.setLoggedReps[w.exIdx][s];
+    const loggedW = ex.weighted && w.setLoggedWeight && w.setLoggedWeight[w.exIdx] ? w.setLoggedWeight[w.exIdx][s] : null;
     const tap = done ? `onclick="openEditSet('active',${w.exIdx},${s})"` : '';
     setsRow.innerHTML += `<div class="set-box ${done?'done':''} ${active?'active-set':''}" ${tap}>
       <div class="set-box-num">${done ? '✓' : s+1}</div>
       <div class="set-box-lbl">Set ${s+1}</div>
-      ${done && logged !== null ? `<div class="set-box-logged">${logged}${ex.unit} ✎</div>` : ''}
+      ${done && logged !== null ? `<div class="set-box-logged">${logged}${ex.unit}${loggedW!=null?' @'+loggedW+'lb':''} ✎</div>` : ''}
     </div>`;
   }
 
@@ -1200,7 +1219,9 @@ function renderWorkoutStep() {
   const prev = prevRepsFor(ex.name);
   if (prev) {
     prevEl.style.display = 'block';
-    prevEl.innerHTML = `Prev: ${prev.logged.map(r => r + prev.unit).join(' · ')}`;
+    let prevLine = `Prev: ${prev.logged.map(r => r + prev.unit).join(' · ')}`;
+    if (prev.weights && prev.weights.length) prevLine += ` @ ${prev.weights[prev.weights.length-1]}lb`;
+    prevEl.innerHTML = prevLine;
   } else { prevEl.style.display = 'none'; prevEl.innerHTML = ''; }
 
   if (ex.unit === 'sec') {
@@ -1223,6 +1244,18 @@ function renderWorkoutStep() {
     const inp = document.getElementById('reps-input');
     inp.value = '';
     updatePBNote();
+    // WEIGHT TRACKING: only rendered for exercises flagged weighted:true
+    const wWrap = document.getElementById('weight-input-wrap');
+    const wInp = document.getElementById('weight-input');
+    if (ex.weighted) {
+      wWrap.style.display = 'flex';
+      const cw = w.currentWeight[w.exIdx];
+      const defaultW = cw != null ? cw : (state.lastUsedWeight[ex.name] != null ? state.lastUsedWeight[ex.name] : '');
+      wInp.value = defaultW;
+    } else {
+      wWrap.style.display = 'none';
+      wInp.value = '';
+    }
   }
 }
 
@@ -1333,6 +1366,18 @@ function completeSet() {
   // time this exercise comes up (via state.lastUsed, persisted below) both default to it.
   w.currentTarget[w.exIdx] = logged;
   state.lastUsed[ex.name] = logged;
+
+  // WEIGHT TRACKING: optional, only recorded for exercises flagged weighted:true
+  if (ex.weighted) {
+    if (!w.setLoggedWeight[w.exIdx]) w.setLoggedWeight[w.exIdx] = [null,null,null];
+    const wv = parseFloat(document.getElementById('weight-input').value);
+    const loggedWeight = isNaN(wv) ? null : wv;
+    w.setLoggedWeight[w.exIdx][w.setIdx] = loggedWeight;
+    if (loggedWeight !== null) {
+      w.currentWeight[w.exIdx] = loggedWeight;
+      state.lastUsedWeight[ex.name] = loggedWeight;
+    }
+  }
   save();
 
   // FEATURE 5: detect first-ever PR before store updates
@@ -1493,11 +1538,20 @@ function finishWorkout() {
     exercises: state.todayEx.map((ex, i) => {
       const logged = w.setLoggedReps[i].filter(v => v !== null);
       const avg = logged.length ? Math.round(logged.reduce((a,b)=>a+b,0)/logged.length) : ex.reps;
-      return {
+      const result = {
         name: ex.name, group: ex.group, targetReps: ex.reps, unit: ex.unit,
         setsCompleted: w.setsCompleted[i].filter(Boolean).length, avgReps: avg,
         loggedReps: w.setLoggedReps[i],
       };
+      // WEIGHT TRACKING: only present for flagged exercises; no PB/progression logic on weight
+      if (ex.weighted) {
+        const wArr = (w.setLoggedWeight && w.setLoggedWeight[i]) || [null,null,null];
+        const wLogged = wArr.filter(v => v !== null);
+        result.weighted = true;
+        result.loggedWeight = wArr;
+        result.avgWeight = wLogged.length ? Math.round((wLogged.reduce((a,b)=>a+b,0)/wLogged.length)*10)/10 : null;
+      }
+      return result;
     }),
   };
   state.history.unshift(entry);
@@ -1516,7 +1570,11 @@ function finishWorkout() {
   document.getElementById('done-list').innerHTML = state.todayEx.map((ex, i) => {
     const s = w.setsCompleted[i].filter(Boolean).length;
     const logged = w.setLoggedReps[i].filter(v=>v!==null);
-    const det = logged.length ? logged.map(r=>r+ex.unit).join(', ') : `${ex.reps}${ex.unit} target`;
+    let det = logged.length ? logged.map(r=>r+ex.unit).join(', ') : `${ex.reps}${ex.unit} target`;
+    if (ex.weighted && w.setLoggedWeight && w.setLoggedWeight[i]) {
+      const wl = w.setLoggedWeight[i].filter(v=>v!==null);
+      if (wl.length) det += ` @ ${wl[wl.length-1]}lb`;
+    }
     return `<div class="done-row">
       <div><div class="done-name">${ex.name}</div><div class="done-det">${s}/3 sets · ${det}</div></div>
       <div class="done-check">${s===3?'✅':'☑️'}</div>
@@ -1544,6 +1602,10 @@ function shareWorkout() {
     text += `${i+1}. ${ex.name}\n`;
     text += `   ${s}/3 sets`;
     if (logged.length) text += ` · ${logged.map(r=>r+ex.unit).join(', ')}`;
+    if (ex.weighted && w.setLoggedWeight && w.setLoggedWeight[i]) {
+      const wl = w.setLoggedWeight[i].filter(v=>v!==null);
+      if (wl.length) text += ` @ ${wl[wl.length-1]}lb`;
+    }
     text += '\n';
   });
   text += `\n💪 Streak: ${calcStreak()} days`;
@@ -1632,8 +1694,9 @@ function renderHistory() {
       </div>
       <div class="hist-exs">${h.exercises.map((e, exi) => {
         const reps = (e.loggedReps || []);
+        const weights = e.loggedWeight || [];
         const chips = reps.map((r, si) => r === null ? '' :
-          `<span class="hist-chip" onclick="openEditSet('history',${exi},${si},${h.ts})">${r}${e.unit} ✎</span>`).join('');
+          `<span class="hist-chip" onclick="openEditSet('history',${exi},${si},${h.ts})">${r}${e.unit}${(e.weighted && weights[si]!=null) ? ' @'+weights[si]+'lb' : ''} ✎</span>`).join('');
         const fallback = reps.every(r => r === null) ? `<span style="color:var(--text-dim)">${e.targetReps}${e.unit} target</span>` : '';
         return `<div class="hist-ex">
           <span class="hist-ex-name">${e.name}</span>
@@ -1741,19 +1804,32 @@ function recomputePB(name, extraVals) {
 // Open editor. ctx = {scope:'active'|'history', exIdx, setIdx, histTs?}
 function openEditSet(scope, exIdx, setIdx, histTs) {
   editCtx = { scope, exIdx: +exIdx, setIdx: +setIdx, histTs: histTs ? +histTs : null };
-  let cur = null, name = '', unit = 'reps';
+  let cur = null, name = '', unit = 'reps', weighted = false, curWeight = null;
   if (scope === 'active') {
     cur = state.workout.setLoggedReps[exIdx][setIdx];
-    name = state.todayEx[exIdx].name; unit = state.todayEx[exIdx].unit;
+    const ex = state.todayEx[exIdx];
+    name = ex.name; unit = ex.unit; weighted = !!ex.weighted;
+    curWeight = weighted && state.workout.setLoggedWeight && state.workout.setLoggedWeight[exIdx] ? state.workout.setLoggedWeight[exIdx][setIdx] : null;
   } else {
     const sess = state.history.find(h => h.ts === editCtx.histTs);
     const ex = sess.exercises[exIdx];
-    cur = (ex.loggedReps || [])[setIdx]; name = ex.name; unit = ex.unit;
+    cur = (ex.loggedReps || [])[setIdx]; name = ex.name; unit = ex.unit; weighted = !!ex.weighted;
+    curWeight = weighted ? (ex.loggedWeight || [])[setIdx] : null;
   }
   document.getElementById('edit-title').textContent = name;
   document.getElementById('edit-sub').textContent = `Set ${+setIdx + 1} · ${unit}`;
   const inp = document.getElementById('edit-input');
   inp.value = (cur === null || cur === undefined) ? '' : cur;
+  // WEIGHT TRACKING: only shown for flagged exercises
+  const wWrap = document.getElementById('edit-weight-wrap');
+  const wInp = document.getElementById('edit-weight-input');
+  if (weighted) {
+    wWrap.style.display = 'block';
+    wInp.value = (curWeight === null || curWeight === undefined) ? '' : curWeight;
+  } else {
+    wWrap.style.display = 'none';
+    wInp.value = '';
+  }
   document.getElementById('edit-modal').classList.add('visible');
   setTimeout(() => inp.focus(), 100);
 }
@@ -1761,13 +1837,26 @@ function saveEditSet() {
   const v = parseInt(document.getElementById('edit-input').value);
   if (isNaN(v) || v < 0) { showToast('Enter a valid number'); return; }
   const { scope, exIdx, setIdx, histTs } = editCtx;
+  // WEIGHT TRACKING: read once; only applied below for weighted:true exercises
+  const wvRaw = document.getElementById('edit-weight-input').value;
+  const wv = parseFloat(wvRaw);
+  const loggedWeight = wvRaw === '' || isNaN(wv) ? null : wv;
   if (scope === 'active') {
-    const name = state.todayEx[exIdx].name;
+    const ex = state.todayEx[exIdx];
     state.workout.setLoggedReps[exIdx][setIdx] = v;
+    if (ex.weighted) {
+      if (!state.workout.setLoggedWeight[exIdx]) state.workout.setLoggedWeight[exIdx] = [null,null,null];
+      state.workout.setLoggedWeight[exIdx][setIdx] = loggedWeight;
+      if (loggedWeight !== null) {
+        state.workout.currentWeight[exIdx] = loggedWeight;
+        state.lastUsedWeight[ex.name] = loggedWeight;
+      }
+    }
     // gather this session's live values for this exercise for PB recompute
     const live = state.workout.setLoggedReps[exIdx].slice();
-    recomputePB(name, live);
+    recomputePB(ex.name, live);
     checkRepMilestone(v);
+    save();
     closeModal('edit-modal');
     renderWorkoutStep();
   } else {
@@ -1777,6 +1866,12 @@ function saveEditSet() {
     ex.loggedReps[setIdx] = v;
     const logged = ex.loggedReps.filter(x => x !== null);
     ex.avgReps = logged.length ? Math.round(logged.reduce((a,b)=>a+b,0)/logged.length) : ex.targetReps;
+    if (ex.weighted) {
+      ex.loggedWeight = ex.loggedWeight || [null,null,null];
+      ex.loggedWeight[setIdx] = loggedWeight;
+      const wLogged = ex.loggedWeight.filter(x => x !== null);
+      ex.avgWeight = wLogged.length ? Math.round((wLogged.reduce((a,b)=>a+b,0)/wLogged.length)*10)/10 : null;
+    }
     recomputePB(ex.name);
     save();
     closeModal('edit-modal');
@@ -1790,7 +1885,10 @@ function prevRepsFor(name) {
     const e = h.exercises.find(x => x.name === name);
     if (e) {
       const l = (e.loggedReps || []).filter(v => v !== null);
-      if (l.length) return { logged: l, unit: e.unit, avg: e.avgReps };
+      if (l.length) {
+        const weights = e.weighted ? (e.loggedWeight || []).filter(v => v !== null) : null;
+        return { logged: l, unit: e.unit, avg: e.avgReps, weights };
+      }
     }
   }
   return null;
@@ -2270,6 +2368,7 @@ load();
 checkEmailModal();
 document.getElementById('version-loc').textContent = 'v' + APP_VERSION;
 document.getElementById('version-home').textContent = 'v' + APP_VERSION;
+document.getElementById('version-workout').textContent = 'v' + APP_VERSION;
 document.getElementById('reps-input').addEventListener('input', updatePBNote);
 // BACKLOG 4: Enter key on numeric inputs commits the value and dismisses the keyboard
 document.getElementById('reps-input').addEventListener('keydown', e => {
@@ -2279,6 +2378,13 @@ document.getElementById('target-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveTarget(); }
 });
 document.getElementById('edit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveEditSet(); }
+});
+// WEIGHT TRACKING: same Enter-to-commit behavior on the weight inputs
+document.getElementById('weight-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+document.getElementById('edit-weight-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveEditSet(); }
 });
 </script>
