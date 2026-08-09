@@ -1,8 +1,14 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_3_08_09_2026
-**Doc version:** 1.3 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_4_08_09_2026
+**Doc version:** 1.4 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.4** — webhook 1.2 deployed and verified live; `webhook/webhook.gs` synced to it.
+§7's redeploy instructions were **wrong** and are corrected: "New deployment" changes the URL, so
+the right path is Manage deployments → edit → Version "New version". Added the `Anyone` access
+rule, the `/u/N/` browser-account trap that fakes a broken webhook, the 1.2 routing table, and a
+warning that the `else` branch is a catch-all into USERS. §3 records v5.0; §11 item 1 updated.
 
 **Changes in 1.3** — §7 corrected and expanded. The 1.2 claim that the script is not named
 "abracadabra" was **wrong**: it is `ABracadABra Webhookv1.1_07_21_2026`, and the real obstacle is
@@ -86,7 +92,7 @@ A single-file abs workout tracker, shipped as an installable PWA.
 
 ---
 
-## 3. Current status — v4.9
+## 3. Current status — v4.9 live, v5.0 committed but not deployed
 
 Verify the version before trusting this section: it is the `APP_VERSION` constant in the file,
 and it appears in three places that must always agree — the HTML comment at the head of the file,
@@ -109,6 +115,19 @@ the `APP_VERSION` constant, and the delivery filename.
   a numeric input. Enter commits and dismisses the keyboard; blur also commits. The ± buttons are
   unchanged. Clamps: 5–900 seconds, 1–999 reps.
 - **Dual-side sets.** See §4.
+
+### v5.0 — committed locally 08_09_2026, NOT deployed
+- **Quit logging.** `exitWorkout()` calls `logQuitSilently()` before tearing down state, sending
+  `type: 'quit'` with `quitExIdx`, `quitExName`, `quitSetIdx` and `totalEx`. Additive —
+  `finishWorkout()` untouched. Duration is **not** clamped to a 1-minute floor the way the
+  completed path is: a sub-minute bail logs `0`, which is the strongest abandonment signal there
+  is. Deliberate Quit only; tab close and Android process kill still log nothing.
+- **Home means bodyweight.** Anything needing equipment is gym-only. Ab Wheel Rollout, Weighted
+  Crunches and Weighted Russian Twist moved to `home:false`. No weighted exercise is flagged home.
+- **34 new exercises.** 22 bodyweight (gym + home), 12 equipment (gym only). Home 16 → 38,
+  gym 34 → 68. This was a real defect, not a nice-to-have: home `upper` and `posterior` held only
+  2 exercises each, so the 7-day no-repeat filter in `pickEx()` emptied the pool by day 3 and fell
+  back to repeats. A 7-day streak saw the same two upper exercises over and over.
 
 ---
 
@@ -203,13 +222,23 @@ and both target-adjust paths.
 - **Routing:** the payload's `type` field selects the destination tab.
 - **Script:** Google Apps Script, tracked separately with its own `WEBHOOK_VERSION` constant.
   Apps Script projects live in Google's editor and are not version-controlled here unless `clasp`
-  is set up. A reference copy of the live source sits at `webhook/webhook.gs`, captured
-  08_09_2026 at `WEBHOOK_VERSION` 1.1. **It is not deployed from here** — editing it changes
-  nothing. To change the webhook, edit it in Google's editor and create a new deployment.
+  is set up. A reference copy of the live source sits at `webhook/webhook.gs`, matching
+  `WEBHOOK_VERSION` **1.2**, deployed and verified live 08_09_2026. **It is not deployed from
+  here** — editing it changes nothing.
+- **Routing as of 1.2:** `type: 'session'` → SESSIONS, `type: 'quit'` → QUITS, everything else →
+  USERS. The QUITS tab is created on first use, so it will not exist until a real quit lands.
+  **The `else` branch is a catch-all** — any new payload type added to the app without a matching
+  branch here silently lands in USERS and pollutes the email list. Add the branch first.
+- **Deployment label vs `WEBHOOK_VERSION`.** The deployment description is a free-text note
+  ("ABracadABra Live v5 - webhook 1.2 - QUITS branch"). Google's internal deployment counter,
+  that label, and `WEBHOOK_VERSION` are three separate numbers and are intentionally unsynced.
+  Only `WEBHOOK_VERSION` is written into the data.
 - **`SHEET_ID` is redacted in `webhook/webhook.gs`, and must stay that way.** This repo is
   public, and that ID points at a sheet holding user emails and session records. Never commit the
   real value. The same applies to any future dump of this script.
-- **Finding the live script.** The project is named `ABracadABra Webhookv1.1_07_21_2026`. It is
+- **Finding the live script.** The project was renamed to `Webhookv1.2_08_09_2026` on 08_09_2026
+  (previously `ABracadABra Webhookv1.1_07_21_2026`) — **the name tracks the webhook version, so
+  do not trust the name written here; search on "Webhook"**. It is
   owned by the **secondary Google account**, not the primary one — that is the whole reason it
   looks missing from `script.google.com`. Fastest route regardless of account: open the logging
   Google Sheet, then **Extensions → Apps Script**.
@@ -231,9 +260,22 @@ and both target-adjust paths.
 - **Retention:** a `pruneOldSessions` function deletes SESSIONS rows past a retention window. It
   requires a manual weekly time-driven trigger in the Apps Script Triggers UI. Verify it is armed
   before assuming pruning happens.
-- **Apps Script gotchas, learned the hard way:** sheet tab names are case-sensitive; always use
-  the constant, never a string literal; every code change needs a **new** deployment, not an edit
-  to the existing one; stray deployments must be archived and one fresh deployment created.
+- **Redeploying — the 1.2 wording here was wrong and cost a round trip.** Earlier versions of
+  this doc said "every code change needs a **new** deployment, not an edit to the existing one."
+  Taken literally that is harmful: **New deployment mints a different URL**, and the app's
+  `EMAIL_ENDPOINT` still points at the old one, so nothing changes. The correct procedure, which
+  preserves the URL:
+  **Deploy → Manage deployments → pencil (edit) → Version: "New version" → Deploy.**
+  The real gotcha behind the old warning is that opening that edit screen and *not* switching the
+  Version dropdown to "New version" redeploys the same old code and looks like nothing happened.
+- **"Who has access" must stay `Anyone`.** The app POSTs with no Google login. If this flips, every
+  request fails silently — logging is fire-and-forget, so nothing in the app would ever tell you.
+- **Verify a deploy by GET, not by eye.** Open the `/exec` URL and read `webhookVersion` from the
+  JSON. Do it from a private window or a plain `curl`: a normal Chrome window rewrites the URL
+  with a `/u/N/` account prefix and returns a Google Drive "unable to open the file" error that
+  has nothing to do with the deployment. That error is an account mismatch, not a broken webhook.
+- **Other Apps Script gotchas:** sheet tab names are case-sensitive; always use the constant,
+  never a string literal; stray deployments should be archived so the Active list stays at one.
 - **Google's internal deployment counter and `WEBHOOK_VERSION` are intentionally unsynced.**
   Do not try to align them.
 
@@ -340,10 +382,12 @@ Do not report a timer change as working on the strength of reading it.
 - Fixed-start exercises are adjustable before completion, not only after.
 
 ### Open
-1. **Quit logging.** `exitWorkout()` currently clears the session and returns home, logging
-   nothing. It needs a `logQuitSilently()` call capturing the exercise and set index at
-   abandonment, a `'quit'` payload type, and a corresponding branch in the Apps Script webhook
-   plus a tab or column distinguishing completed from abandoned sessions.
+1. **Quit logging — webhook done, app committed but unreleased.** Webhook 1.2 with the QUITS
+   branch is deployed and verified live (08_09_2026). The app side is committed locally at v5.0
+   and has **not** been pushed. Remaining: ship v5.0, then confirm a real quit lands in QUITS.
+   Still genuinely open underneath it: a tab close or Android process kill logs nothing, so
+   "abandoned" undercounts. Catching those needs `visibilitychange`/`beforeunload` plus
+   deduplication against the resume path, which is a bigger job than it sounds.
 2. **Weight tracking depth.** PB logic on weight, progressive-overload suggestions, and per-set
    weight support in the edit-set modal. Currently record-and-display only.
 3. **GoatCounter analytics.** Privacy-first, no cookies. Only human step outstanding: create the
@@ -358,4 +402,4 @@ Do not report a timer change as working on the strength of reading it.
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_3_08_09_2026 — describes app version 5.0 (unreleased)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_4_08_09_2026 — describes app version 5.0 (unreleased)**
