@@ -8,6 +8,11 @@
        REQUIRES the webhook to have a 'quit' branch first — without it the payload falls
        through to the USERS tab and pollutes the email list. Do not ship these out of order.
        Deliberate Quit only; a tab close or process kill still logs nothing.
+    2. HOME = BODYWEIGHT ONLY — anything needing equipment is now gym-only. Moved to
+       home:false: Ab Wheel Rollout (needs a wheel), Weighted Crunches and Weighted
+       Russian Twist (need a weight). Home now has no weighted exercises at all.
+       Smallest home pool is 2 (upper, posterior); pickEx() falls back rather than
+       failing, and swap still offers at least one alternative.
   Carried over from v4.9:
     1. APP ICON — the v4.7 manifest icon decoded to malformed SVG and drew nothing.
        Rebuilt as PNG: AB wordmark, orange A / blue B, 192 + 512 + padded maskable 512.
@@ -794,13 +799,13 @@ const APP_VERSION = '5.0';
 // ═══════════════════════
 const DB = {
   upper:[
-    {name:'Weighted Crunches',sets:3,reps:15,unit:'reps',tip:'Hold weight at chest. 2-second descent. Exhale at top.',gym:true,home:true,weighted:true},
+    {name:'Weighted Crunches',sets:3,reps:15,unit:'reps',tip:'Hold weight at chest. 2-second descent. Exhale at top.',gym:true,home:false,weighted:true},
     {name:'Overhead Sit-Up',sets:3,reps:15,unit:'reps',tip:'Arms locked overhead throughout. Engage core before moving.',gym:true,home:true},
     {name:'Medicine Ball Crunches',sets:3,reps:15,unit:'reps',tip:'Throw the ball on the crunch if a wall is available. Otherwise hold overhead.',gym:true,home:false,weighted:true},
     {name:'Stability Ball Crunch',sets:3,reps:20,unit:'reps',tip:'Let your back arch over the ball for full range. Greater ROM = more muscle.',gym:true,home:false},
     {name:'Decline Sit-Up',sets:3,reps:12,unit:'reps',tip:'Control the descent. Don\'t yank your neck.',gym:true,home:false},
     {name:'Bodyweight Crunches',sets:3,reps:25,unit:'reps',tip:'Exhale hard at top. Short range of motion is fine — the squeeze counts.',gym:true,home:true},
-    {name:'Ab Wheel Rollout',sets:3,reps:10,unit:'reps',tip:'Brace like you\'re about to be punched. Don\'t let hips sag.',gym:true,home:true},
+    {name:'Ab Wheel Rollout',sets:3,reps:10,unit:'reps',tip:'Brace like you\'re about to be punched. Don\'t let hips sag.',gym:true,home:false},
     {name:'Cable Crunch',sets:3,reps:15,unit:'reps',tip:'Pull with abs, not arms. Elbows fixed. Round the spine.',gym:true,home:false,weighted:true},
   ],
   lower:[
@@ -817,7 +822,7 @@ const DB = {
   oblique:[
     {name:'Oblique Crunches',sets:3,reps:16,unit:'reps',tip:'Alternating. Drive elbow toward opposite knee. Slow tempo.',gym:true,home:true,altSide:true},
     {name:'Russian Twist',sets:3,reps:20,unit:'reps',tip:'Alternating. Feet elevated makes it harder. Touch floor each side.',gym:true,home:true,altSide:true},
-    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Alternating. Control the weight — don\'t let momentum do the work.',gym:true,home:true,weighted:true,altSide:true},
+    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Alternating. Control the weight — don\'t let momentum do the work.',gym:true,home:false,weighted:true,altSide:true},
     {name:'Hanging Around the World',sets:3,reps:10,unit:'reps',tip:'Full circular leg path. Each direction = 1 rep.',gym:true,home:false},
     {name:'Hanging Pendulum',sets:3,reps:12,unit:'reps',tip:'Legs together, swing side to side with control.',gym:true,home:false},
     {name:'Side Plank',sets:3,reps:35,unit:'sec',tip:'Per side — hold one side, switch, hold the other. Drive hips up.',gym:true,home:true,dualSide:true},
