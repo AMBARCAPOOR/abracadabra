@@ -1,8 +1,14 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_1_08_09_2026
-**Doc version:** 1.1 · **Date:** 08_09_2026 · **Describes app version:** 4.9
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_2_08_09_2026
+**Doc version:** 1.2 · **Date:** 08_09_2026 · **Describes app version:** 4.9
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.2** — §7 rewritten. A redacted reference copy of the webhook now lives at
+`webhook/webhook.gs` (`WEBHOOK_VERSION` 1.1, captured 08_09_2026). Added the rule that `SHEET_ID`
+must never be committed to this public repo, and instructions for finding the live script, which
+is not named "abracadabra" and may sit under a secondary Google account. Supersedes the 1.1
+wording that said to keep a copy of the source without qualification. No app code changed.
 
 **Changes in 1.1** — absorbed four technical facts from the previous project-memory file, which
 is archived verbatim at `docs/legacy-project-memory-07_22_2026.md`: the end-timestamp timer rule
@@ -190,11 +196,17 @@ and both target-adjust paths.
   `EMAIL_ENDPOINT` constant in the app. Failures are swallowed and never surfaced to the user.
 - **Routing:** the payload's `type` field selects the destination tab.
 - **Script:** Google Apps Script, tracked separately with its own `WEBHOOK_VERSION` constant.
-  As of the 07_22_2026 note the current source was `ABracadABra_Webhook_v1_1_07_21_2026.txt`,
-  held in the Claude project rather than in git. Apps Script projects live in Google's editor and
-  are not version-controlled here unless `clasp` is set up. **Keep a reference copy of the live
-  `.gs` source at `/webhook/webhook.gs` in this repo** purely for history — it is not deployed
-  from here, and editing it does not change the running webhook.
+  Apps Script projects live in Google's editor and are not version-controlled here unless `clasp`
+  is set up. A reference copy of the live source sits at `webhook/webhook.gs`, captured
+  08_09_2026 at `WEBHOOK_VERSION` 1.1. **It is not deployed from here** — editing it changes
+  nothing. To change the webhook, edit it in Google's editor and create a new deployment.
+- **`SHEET_ID` is redacted in `webhook/webhook.gs`, and must stay that way.** This repo is
+  public, and that ID points at a sheet holding user emails and session records. Never commit the
+  real value. The same applies to any future dump of this script.
+- **Finding the live script.** It is not named "abracadabra" and will not turn up by searching
+  that word. Open the logging Google Sheet, then **Extensions → Apps Script**. Note that it is
+  owned by the Google account that owns the sheet, which is not necessarily the primary account —
+  if `script.google.com` looks empty, check the other account before concluding it is gone.
   Read the current script before changing it — as of 08_08_2026 it handles `type: 'session'`
   into a SESSIONS tab, and routes everything else into a USERS tab. There is no `'quit'` branch
   yet. A META tab records which script version last served a request.
@@ -328,4 +340,4 @@ Do not report a timer change as working on the strength of reading it.
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_1_08_09_2026 — describes app version 4.9**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_2_08_09_2026 — describes app version 4.9**
