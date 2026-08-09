@@ -1,8 +1,13 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_5_08_09_2026
-**Doc version:** 1.5 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_6_08_09_2026
+**Doc version:** 1.6 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.6** — §11 item 3 corrected and deferred. GoatCounter was recorded as the route to
+Day-1/Day-7 retention; it cannot do retention at all, being cookieless by design. Retention is
+already computable from `deviceId` in SESSIONS with no new tooling. Item 3 now records what
+GoatCounter would actually add, and that adopting it costs a second external dependency.
 
 **Changes in 1.5** — §4 and §5 re-extracted from the code and dated. §4's side-classification
 lists were stale (dualSide 3 → 9, altSide 6 → 16) and are now generated, not hand-written; the
@@ -436,8 +441,20 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
    deduplication against the resume path, which is a bigger job than it sounds.
 2. **Weight tracking depth.** PB logic on weight, progressive-overload suggestions, and per-set
    weight support in the edit-set modal. Currently record-and-display only.
-3. **GoatCounter analytics.** Privacy-first, no cookies. Only human step outstanding: create the
-   account and supply the site code. Purpose is Day-1 and Day-7 retention plus source attribution.
+3. **GoatCounter analytics — deferred 08_09_2026, and its stated purpose was wrong.** Earlier
+   wording claimed the purpose was "Day-1 and Day-7 retention plus source attribution."
+   **GoatCounter cannot do retention.** It is deliberately cookieless and does not follow a
+   visitor across days — that is the point of it. It answers *how many* visited and *where from*,
+   never *who came back*.
+   - **Retention is already available with no new tooling.** Every SESSIONS row carries
+     `deviceId` (the persistent anonymous UUID from `abra_device_id`), collected since
+     21_07_2026. Group by `deviceId`, compare each device's first session date to its later
+     ones — that is Day-1 and Day-7 retention, and it is the number gating item 5.
+   - **What GoatCounter would genuinely add:** referrer/source attribution, and the count of
+     people who open the app but never start a workout. Neither is visible today, because the
+     webhook only fires on completion or quit.
+   - **Cost if adopted:** it would be the second external dependency after Google Fonts
+     (`gc.zgo.at/count.js`), which §2 forbids without asking first. Ask.
 4. **User count display in-app.**
 5. **Play Store packaging.** TWA via Bubblewrap, Digital Asset Links, `assetlinks.json`,
    Lighthouse thresholds, a mandatory closed-testing gate with a tester minimum and a waiting
@@ -448,4 +465,4 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_5_08_09_2026 — describes app version 5.0 (unreleased)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_6_08_09_2026 — describes app version 5.0 (unreleased)**
