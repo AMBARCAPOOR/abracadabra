@@ -1,8 +1,15 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_0_08_08_2026
-**Doc version:** 1.0 · **Date:** 08_08_2026 · **Describes app version:** 4.9
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_1_08_09_2026
+**Doc version:** 1.1 · **Date:** 08_09_2026 · **Describes app version:** 4.9
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.1** — absorbed four technical facts from the previous project-memory file, which
+is archived verbatim at `docs/legacy-project-memory-07_22_2026.md`: the end-timestamp timer rule
+(§6.1), the toast-undo delete pattern (§2), the `--green` token (§2), and the webhook filename
+plus local-copy convention (§7). **This document supersedes that file wherever they conflict** —
+in particular, the archived file says the versioned-filename convention no longer applies; it
+does, and §10 is correct. No app code changed; still describes 4.9.
 
 > Markdown has no pagination, so the usual page-footer rule does not apply. Document name and
 > version appear at the top and bottom of this file instead. Plain text, no colour dependence.
@@ -15,7 +22,9 @@ These override convenience. They exist because all three have been violated befo
 
 1. **Verify before asserting.** Never state the contents, structure, or state of a file, sheet,
    or cell without reading it in the current session. A summary, a memory, or this document is
-   not a reading. This document was accurate on 08_08_2026 and drifts from that moment onward.
+   not a reading. The app-state claims here were verified on 08_08_2026 and drift from that
+   moment onward. Version 1.1 carried forward notes from an older file; it re-verified nothing
+   against the code.
 2. **Verification does not inherit.** Reading a file's constants does not verify what it computes
    at runtime. Each claim carries its own evidence.
 3. **No causal claims without the falsifying check.** Before saying "X broke because of Y," state
@@ -53,11 +62,15 @@ A single-file abs workout tracker, shipped as an installable PWA.
 - **No external dependencies** except a Google Fonts `@import` (Barlow Condensed 900 + Inter).
   Do not add a dependency without asking first.
 - **No `localStorage` alternatives.** All persistence is `localStorage`. See §5.
-- **Dark theme only.** `--orange: #ff6b2b`, `--blue: #3b82f6`, `--bg: #0a0a0f`.
+- **Dark theme only.** `--orange: #ff6b2b`, `--blue: #3b82f6`, `--bg: #0a0a0f`,
+  `--green: #22c55e`.
   Display font `--font-d` (Barlow Condensed), body font `--font-b` (Inter).
 - **Fixed max width 480px, portrait.** It is a phone app that happens to open on desktop.
 - Do not introduce `confirm()` or `alert()` dialogs. Exactly two `confirm()` calls are
   intentional and may stay: backup import (destroys all data) and Quit session.
+- **Every other destructive action uses the toast-undo pattern** — perform the delete
+  immediately, then show a toast with a five-second undo window. This is the house pattern for
+  deleting a logged set or a session. Do not replace it with a confirmation dialog.
 
 ---
 
@@ -146,19 +159,26 @@ and both target-adjust paths.
 
 ## 6. Known fragile paths — read before touching the workout screen
 
-1. **`clearTimers()` must run before `showRest()`.** The path
+1. **Every timer must be end-timestamp-based, never a decrement counter.** Compute an absolute
+   end time once, then derive the remaining time from `Date.now()` on each tick. A timer that
+   subtracts one second per tick silently loses time whenever Android backgrounds the tab or the
+   screen locks, because the interval stops firing — the user comes back to a countdown that is
+   wrong by however long the phone was asleep. This is a "do not reintroduce" constraint, not a
+   preference. It applies to the exercise timer, the prestart countdown, the rest timer, and the
+   dual-side switch timer alike.
+2. **`clearTimers()` must run before `showRest()`.** The path
    `completeSet()` → `renderWorkoutStep()` → `showRest()` without it causes silent double-fires.
    This has regressed before.
-2. **`clearTimers()` must clear every timer handle.** It currently clears the exercise timer, the
+3. **`clearTimers()` must clear every timer handle.** It currently clears the exercise timer, the
    prestart timer, and the dual-side switch timer, and hides the switch panel. Any new timer must
    be added there in the same commit that introduces it.
-3. **`recomputePB()` must be called on every history delete.** No exceptions.
-4. **Three sets is assumed in many places** (`[false,false,false]` array literals, `/3` labels,
+4. **`recomputePB()` must be called on every history delete.** No exceptions.
+5. **Three sets is assumed in many places** (`[false,false,false]` array literals, `/3` labels,
    `nextSet < 3`). Changing `sets` per exercise is a wider refactor than it looks.
-5. **Weight tracking was silently lost once.** It existed in the v3.7–v4.2 lineage and vanished
+6. **Weight tracking was silently lost once.** It existed in the v3.7–v4.2 lineage and vanished
    before v4.5; the whole system had to be rebuilt. Do not delete a feature you do not recognise —
    ask.
-6. **The service worker cache is version-keyed.** `CACHE = 'abracadabra-v${APP_VERSION}'`. If
+7. **The service worker cache is version-keyed.** `CACHE = 'abracadabra-v${APP_VERSION}'`. If
    `APP_VERSION` is not bumped, the old code is served forever and the change appears not to have
    deployed. This is the single most common false "it didn't work" report.
 
@@ -170,6 +190,11 @@ and both target-adjust paths.
   `EMAIL_ENDPOINT` constant in the app. Failures are swallowed and never surfaced to the user.
 - **Routing:** the payload's `type` field selects the destination tab.
 - **Script:** Google Apps Script, tracked separately with its own `WEBHOOK_VERSION` constant.
+  As of the 07_22_2026 note the current source was `ABracadABra_Webhook_v1_1_07_21_2026.txt`,
+  held in the Claude project rather than in git. Apps Script projects live in Google's editor and
+  are not version-controlled here unless `clasp` is set up. **Keep a reference copy of the live
+  `.gs` source at `/webhook/webhook.gs` in this repo** purely for history — it is not deployed
+  from here, and editing it does not change the running webhook.
   Read the current script before changing it — as of 08_08_2026 it handles `type: 'session'`
   into a SESSIONS tab, and routes everything else into a USERS tab. There is no `'quit'` branch
   yet. A META tab records which script version last served a request.
@@ -303,4 +328,4 @@ Do not report a timer change as working on the strength of reading it.
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_0_08_08_2026 — describes app version 4.9**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_1_08_09_2026 — describes app version 4.9**
