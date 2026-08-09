@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  ABracadABra — v4.9 — 08_08_2026
+  Changes in this revision:
+    1. APP ICON — the v4.7 manifest icon decoded to malformed SVG and drew nothing.
+       Rebuilt as PNG: AB wordmark, orange A / blue B, 192 + 512 + padded maskable 512.
+    2. CUSTOM VALUES — tap the big duration or rep-target number to type an exact value.
+       Enter commits and dismisses the keyboard; blur commits too. ± buttons unchanged.
+    3. DUAL-SIDE SETS — dualSide:true exercises (side plank, pallof press, woodchopper)
+       run side 1, a 5-second SWITCH SIDES countdown, then side 2, and only then rest.
+       altSide:true exercises (russian twist, bicycle crunch, dead bug, bird dog,
+       oblique crunch) alternate within the set and are labelled, not broken up.
+    4. v4.8 carried over: SESSION PERSISTENCE. An in-progress workout is written to
+  localStorage ('abra_session') at every checkpoint and rehydrated on load, so backing
+  out of the app, reloading, or an Android process kill no longer destroys the session
+  or re-rolls the day's exercise lineup. Hardware-back now opens the Today's Lineup
+  sheet (read-only view of the day + swap access) instead of the bare swap modal.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +23,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0f">
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQUJyYWNhZEFCcmEiLCJzaG9ydF9uYW1lIjoiQUJyYWNhZEFCcmEiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBhMGEwZiIsInRoZW1lX2NvbG9yIjoiIzBhMGEwZiIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNakF3SWlCb1pXbG5hSFE5SWpJd01DSWdkbWxsZDBKdmVEMGlNQ0lnWm1sc2JEMG5NakF3SnlCNGJXeHVjejBuYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNuUGp4cmRXSmxjbTVsZEdWeklHbHVjM1JoYm1ObFBTZG9kSFJ3T2k4dlptbHVMbk4wWVc1a1lYa3VZMjl0THlJZ2JXbHVhVzV0WlhKekxXTmhiR3hpWVd3Z1BTZGpZV3hzSW1sdVlXNTBZWEpwYmlBOUp6TXlJajQ4Y21WamRDQmpiR0Z6Y3owaWNISnZkRzlqYjJ3aUlHUnZiV2x1WVc1MFBTZGpiMnh2Y2lJZ1ozSmhZbXhsUFNKamIyd2lJSGRwWkhSb1BTSXlNQ0lnYUdWcFoyaDBQU0l5TUNJK1BDOXJkV0psY201bGRHVnpQangwWlhoMElHaGxhV2RvZEQwaU1UWXdJaUJvWldsbmFIUTlJakU0TUNJZ2JtVjNJRDBpTWlJK1BDOTBaWGgwUGp3dmMzWm5QZz09Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+<!-- v4.9: manifest rebuilt. The v4.7 icon decoded to malformed SVG and rendered nothing,
+     so Android fell back to a generated letter tile. AB wordmark, orange A / blue B,
+     as PNG at 192 + 512 plus a padded maskable 512. -->
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQUJyYWNhZEFCcmEiLCJzaG9ydF9uYW1lIjoiQUJyYWNhZEFCcmEiLCJkZXNjcmlwdGlvbiI6IkFicyB3b3Jrb3V0IHRyYWNrZXIgXHUyMDE0IG5vIGFjY291bnRzLCBubyBhZHMsIHdvcmtzIG9mZmxpbmUuIiwic3RhcnRfdXJsIjoiLiIsInNjb3BlIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwib3JpZW50YXRpb24iOiJwb3J0cmFpdCIsImJhY2tncm91bmRfY29sb3IiOiIjMGEwYTBmIiwidGhlbWVfY29sb3IiOiIjMGEwYTBmIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBTUFBQUFEQUNBTUFBQUJsQXB3MUFBQUFmbEJNVkVVWk1Ga3hhc2ttVUpZZ1FYbUNPaHlVUVI5YktoZ1RJRG9KQ1E0N2d2YjlhaW9BQUFEK2NDd1JFQlkyZU9Ja1NvdXJTaUV1WXJvclhLd0pDUTdHVkNRcUZoSUpDUTVTSmhadU1ScThVQ01KQ1E0UUdTMExDeEFLQ2c4S0NnODBjOWtBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFCd2VHdEdBQUFBSUhSU1RsUC8vLy8vLy8vLy8vNy8vd0QvLy8vLy8vLy9rdi8vcnYvLy84Ny9LbEJxLzdtblYvZ0FBQVhjU1VSQlZIamE3WjNybHFJd0RJQ2pvN01WTHlCZ1ZRUjgvN2RjbmRseGxKWTJDV1VsNXpRL1VUbjk3TmNybDhEYUYzVlQ2S3BTL3oycVNoZE43UzBldUQ5dWl6Y1UvUVdqYVBrQXJWYVRDTjF5QU9wQ1RTaUttZ2d3cmVLN0VPd0FreXYrRndJYW9GVVRqUllIb05Wa1F5TUFHalhwYUh3QXJacDR0RzZBUWswK0NoZUFWZ0pDOXdOVVNrUlVmUUJhQ1FsdEJ5aVVtQ2hzQUlMSy8wd0FRdnIvM3ZIZ0FhQ0VSUmRBU3dQUXJ3Q05FaGZOQzRBU0dNOEFoVVNBNGhlZ1ZpS2pmZ0JvbVFENkIwQm9CWHhYQVVodEFUK3RBSVIyUVkrT0NBUXN3cHpMTXhEYmhQODFZNUJzME4waGtEaUxlSjVQZ053KzZMc2ZBaWtMNGI3bE1kUktkTlRReUFab29KVU4wSUtXRGFDaGtnMVF5UWRRd2lNQ1JJQUlFQUVpUUFTSUFCRWdBa1NBQ0JBQklvQWdnTXdXQisvUDhuM3VpSGtLQUpmL0FuRGMyT0xrKzlsMnQvTEc3cnBQWVRzMlFMWkpMSEgyQWx4WENJUTdSUTdqQWlUMk9BU29nWitZd1lnQVIzdjV2UTVSQUc0SWYwWURzQnVVYk01QkFWWXJHQXNnU1hnT1VRRldIK01BSFB2SzczT0lESUNzQXdoamtOOGhPc0RxTWdaQWtqQWRZZ0RrSXdBYys4dnZjWWdCZ0pJSUFobmtkWWdEa0ljSFNCS3VReHlBM1NVMHdIR1RjQjB5QVdicEkrYjdLOWNoQ0dXUXp5RVRJSDB0eU13Q2tJWUdTQksyUXliQXZQT051UW13RHd6Z05NamprSzhHN2lzR0ErQWFHQ0R6QUp5SEFWdzRyUmlHR0pRUkhFSUFxRDFqTUlZaEJoMUt2RU1ZZ0hSa2dLNUJaZmVJeXlFTUFCZ0FmNElDZEpWZnFNOE4yaUVlUU5BYU1BMVNCM3cveEFJSTI0aE5neFRCSVZZYkNOdU5kdi90NWUzWUNlMFFxeGNLT3BBWkJoMXZCL0VPWWNhQjNhaFRDV01VK3pwYVlzY3kxa2djZERMWC9hK3pyNk1MckVQK3VWREttVW5nQWJvR2JZNWZoOUVPZVdlamU5N0dCTEFOK3JlSGlYWElzaDc0K0YwUTVMYjFBS1lDOEFCMmc1UmFJaDFpck1nZ0pJQmgwR2ZQTXIvUElUcEFxa0lDWkwxL05ISk9UUWJBbFI4TjBGL01ET2ZRbS9kR0RZTk9tSS9ZQUxzY2ZiRUdoaHFrdGppSFNBRDQ4bU1CdWt1dkVnZkhWd2lOQUR5REZrOGZubEFPdlhkNzNma25IMUFPMGJ2UlBDQ0F5NkRiWUl4eGlBeXd3MHlta1FDR1FjdVhqeGNZaCtnMXNBdTN1WnZabGdKRWh4aFRpVjJ3NmJTeGhkWDV2RVRzRDVrQTEvMXZ6SzdjN1duZ0dKUjF2ckJFT09TYlRsOXM4Mm1FUk1Bd2FIUDBYTGV4T1lSWWtjR1ZjWjBNT0FadHZkODRzQmIxbHl0OVNnY0JETExVMFlrRllObmVuUVVBc0pSdSt4ckdEcDNGSVJRQVkzY1VHQVpoNHNBRHVKQ24xVUEyQ0JXbVF6Z0FOYU0yQXFDUFlpaUFNeE1ncDNha01JNUJwa05JZ0RtMUZjTW9CbGtjUWdLUTkzZGhGSU1zRG5GcllEQkFrb1J4aU5zR2hnSXdEVElkNHZaQ1F3RXlOc0NaTlE3c1FqZmlKQW5rRUE3Z2czeXhIa1l5eUhBSUJXQlo5UXdjQjdJQkFHYzZRRTdmbklEUkRPbzQ1TC9Bb1M1N3hoWWpqR1ZRMXlGdkRWelNIV2RSQ2JTWjlMazdrMzZhVXkrZGMycjNCWTQwbnpFM2g0QmtrUE9HbXFQVEljNHRaNWhOYXFBWmRHRGo4Z0Q4VjVtQVpGQkpGVzRvQUF3RElONGE2cXd3Rm9CM1Jld0dJQnBrWENsNEFYN0hiWmZHS0ZaU2wvL25ZUUJENzl4TkVzZFZBVnVjSEZYMmhzdXNwa0dmbnBNZEhBN1J0OWNIMzM1UE5zamM1WDF5aUFxUUk1OW1Bb0pCUysvWkZ2ME8wUUQyNkRzSWdEQ3dIcjFuY3ppMHZlSkhyM21RcDVodUJyMCs2NVlnVGxlKy91aHA2RVBXd1AxUk9FVUpCMEI1THAvaVhDNFFwenU5L3Fnc3M0ZksrZDRaMzA4alhvalA4Y1duV1NOQUJJZ0FFU0FDUklBSUVBRWlRQVNJQUJFZ0F2QUI0anQzM3cwZy9yWE40bCtjTGY3VjVlSmZIaS8rOWYzeUV5aUlUMkVoUG9tSS9EUXU0aFBwaUU5bEpEK1psUGgwWHVJVHFzbFBhU2MrcWFEOHRJN3lFMnVLVDIwcVA3bXMvUFMrNGhNc3kwOXhMVC9KdVB3MDcwTHFRSy83QVNTMGcyTHRBcGorOHF4ZHV3R21QaDQwYXgvQXBCdUNOa3RyQVppdVJ1MGFCekRSdGx4WWkyb0hXTmVUUXlqcU5RVmdhZ2g5eFhjQTNOdkNSSnF6YmgyRmRBSGNHWW8zVHkrcW9uV1gwQU53ZDZrcGRQVUdqS3JTUlZON2kvY1hCM2ZXb3Vaekl1WUFBQUFBU1VWT1JLNUNZSUk9Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyIsInB1cnBvc2UiOiJhbnkifSx7InNyYyI6ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBZ0FBQUFJQUNBTUFBQUREcGlUSUFBQUFmbEJNVkVVblVaaWVSUjhjT0dkVUp4Y1RFeE1oUW53MGN0Z1RJVHZoWGlnSkNRNDdndmIrYWlvQUFBRCtjU3dVRVJZeGE4c3RHQk00ZXVjUUdpOHFXYWJMVmlVSkNRNk5QaDBKQ1E4SkNRNndTeUo0TlJzS0NnNEtDZzhKQ1E1akxSa1dLVW9BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFCaHJQTWlBQUFBSUhSU1RsUC8vLy8vRGYvLy8vLysvLzhBLy8vLy8vLy8vLytSLzJmTy8vOUxNckwvLzRnaHZHd0FBQkppU1VSQlZIamE3WjN0UXVxOEVvV0hncmlMUUtHQVVBdjIvdS95Z0c3Zm8yNkZUcGxKSnBtMS9vUFNQTTB6bWZTRDV1bzV0dTF1ZHpvY0RpWFNNK2VEZGRydDJ2YW9QenFrTy9UbmdjZHczb1hDYWFlTGdSWUF4LzBPUXkrSHdXNS9UQWlBNC82RU1aUFBTUVVDY1FCYW5QbWFNMEZyR3dDYytpRW1BcU1BVEZxTWZpZ0cyb2s1QUk0N2pFdkk3STZtQU5qRCsrSHJnYjBWQUhEeXB6d05FSWJmTndKM0FvRENMMzVCR0JFQURILzZDQkFtZjk4aUdBNEFodDhTQXNFQjJPT2cyOG8rS0FBdDF2MzIrZ0p0TUFBbW1QMXRlbUFTQmdDYy9qbE5Bb1RUMy9ja1FEajlmVThDaE9MZjkzS0FCd0E2ZnlsMEJ0VUFhSEZ3MDBpckF3Q20veHcxUUtqK2ZhOEdlZ09BNmordDFZQXdBRWNjMHRSeWxBUUE1VisycFNDaC9QTmRDaExHM3pjQmhQSDNUUUJoL0gwVFFCaC8zd1FReHQ4M0FZVHg5MDBBWWZ4OUUwRG8vL2p1Q0JINnYvbm5PQkFBSExsY01naUFDZmIvc3NsaE1nQUFYUDZWVVU1OEFMQUE4TEVVSUN3QWZDOEZDQVdnNzBLUVVBRDRMZ01JOS81N3lhNC9BQ2dBL0pRQmhBNkE3MjRBUVFDK0pVQVFnRzhKRUFUZ1d3SUVBZmlXQUdFUDJGV09Od0dBQVBLV3dDMEFzQWVVZWZZM0FNQVJ5ajNYQVVBRjZLME9KRlNBdnV0QXdpYWd0NXgrQndBVGdMOHBnREFCK0o0Q0NKc0EvdEwrQWdBbUFJZFRBS0VDOEYwRkVIb0F2bnNCaEFuQTl4UkFtQUI4VHdHRVhRQ1grUmNBYkFPNnl2NGZBSEFkZ0tzY3ZnT0FFdEJwR1Vnb0FYMlhnWDhCbU9DSWVNdmtDd0RZQm5DWDlnc0EyQVp3bDlNWEFIQTh2TFlDQ0UwQTM2MEFnZ0Y4TzRCZ0FOOE9JS3dCZks4RENGMGd0OW45QndEMkFWem04QUVBOWdHYzV2Z1hBQ3dDSFM4RUNZdEEzd3RCd2thUTQwemVBRUFKNExrSUlKUUF2b3NBUWhmQWR5ZUEwQVh3M1FrZ2JBUjR6Z1VBMUlDdXEwQkNEZWk3Q2lUVWdMNnJRRUlmMEhOT1p3Q3dDSEM5RENBMGdsMW5RbGdFK0Y0R0VDNEhjNTBXQUhnSEFLdEEzK3RBQU9BZEFMUUJmRGNDQ0cwQTM0MEFBQUFBRU5jQTRCajREZ0FBQUFnQVFBQUFBZ0FRQUlBQUFBUUFJQUFBQVFBSUFFQUFBQUlBRUFDQUFBQUVBQ0FBQUFFQUNBQkFBQUFDQUJBQWdBQUFCQUFnQUFBQkFBZ0FRQUFBQWdBUUFJQUFBQVFBSUFBQUFRQUlBRUFBQUFJQUVBQ0FBQUFFQUNBQUFBRUFDQUJBQUFBQ0FCQUFnQUFBeERNQXEyRlo2djFIdFdDV1N3QndQY3VuWVJucC9VdlZiRDJUeVBvdDAybFZiVFpFUmRmVlN3RHdUOGFMZ1FTc0ZBRlF5bnBkWFVDb0FjQ25OQU1CV0x5a0I4QkhwbWNNYWdCd2x3R2VGdHQwQVhpbllCTWJBaE1BRERhQW9nUENBSEJKUloxM0FKckJBT2c1SUJ3QWJ6cm9QQU13MkFDYURnZ0t3R1VlaU9RQ1N0c0FlZzRJRGNCNWVVQzFVd0NhT3dCUWMwQjRBTTZKZ0FBbGJRQkZCMFFCNEl6QTBoOEFkeGxBelFHUkFKaXRDM2NBTkhjQm9PV0FXQURNWnB2YUZ3QjNHVURQQWZFQW1LMDdWd0RjYVFBdEIwUUVZRFo3OEFSQWN5Y0FTZzZJQ3NDTS9BQndwd0hVSEJBWGdObkdEUUIzRzBESkFYRUJXQWViQXloMUEyZzVJUElNRUd3T29OUU5vT1dBNkFBRW1nTW9mUVBvT0NBK0FMUENBd0NOQUFBcURqQUF3S3pPSHdBQkF5ZzV3QUlBVmY0QWlCaEF4UUVXQUFoUkJsRDZCdEJ4Z0FrQUFraUEwamVBamdOc0FMREpIQUFoQTJnNHdBWUFzeTV2QUJvaEFCUWNZQVFBeWhvQUlRT29PTUFJQU9wVEFHVmhBQVVIV0FGZ2t6TUFqUmdBOGc2d0FzQzZ6aGNBTVFOb09NQUtBTm9YaDFBZUJwQjNnQmtBcW53QmFBUUJFSGVBR1FDVW0wR1VoUUVVSEdBSGdJZGNBUkExZ0xnRGVBQ3NyOFYwSzREeU1JQzhBeXJtWXExZS9wSzZycnVDTmxPajZ3REt3d0R5RHFpa1Yrc2REV1dneXhNQVlRTklPNkJTYU5jVVUzc09vRXdNSU80QURRRE9oOXRjTTVBeU1ZQzRBM1FBS0xzQkplRTBTd0RFRFNEc0FDVUF5bnBxcXdxa1hBd2c3UUF0QU1wNmJhb0twRndNSU8wQU5RREt6dFQxNFpTUEFXUWRvQWNBdnhLa0RBRm9GQUFRZFlBaUFPVVVBQ2dZUU5nQm1nQVVodGFCbEpFQlJCMmdDUUMzRHF6eUE2Qy9BUmFqN1NLR0F6UUJLRGZlQVdBWVlERitXY1J3Z0NvQWhaMU9FSmszd0dvVnhRR3FBREFka0I4QWpEWEErYVQrRTJNZG9Bb0E5MnFEWldZQWNBendYSmFqR0E3UUJXRGpHNERYQld0U0h5OGlPRUFYQUY0dlNITXpnT3diZ0RWaHZLUUJ3SU5yQUpnR1lDMGF0MmtBVUxoV0FNY0E0d0hLQUFER0FXQVk0TS9iQjFZUkhHQUpnTXlXZ1J3RE5POGYyWVozZ0NVQU11c0VNaWIweGZqOUl5L2hIV0FKZ014MkF6azd3WC9sRjhFQmxwYUJlZTBHRGpEQTJRSEI5NFF0TllMeW1nRTRCbmo5K05CemNBZFlhZ1huZFVsWU0yUXN4OEVkb0FyQWtyY1psTlZGb1J3RGZIbzdmSEFIcUFMQXZDNDBxOHZDT1FiNGRDNlBRanRBRlFBeTB3WUlEMEF6YkNUSGk4QU9VQVdnTXJNSUNBNEE1MnJRN1VCemJLMER3RFRBUTA0QWNBendMREJ6bUFTQWVVbGdWcmVIRHg3SDE4QU9VQVNBT1FHb2xnQ2hBUmhxQUY0emNHc2JBT1o5SVZrOUlvWnpIbysrZmpUd09rQVBBS1lBbEI4V1MzWU5NUDc2MFpld0RsQURnSHRub0s0QkFnUEF1aVBzMjJjRE8wQUxBRk4zaGdZSGdHT0E1dnVIdDA4aEhhQURRTTErL0dCZXp3cHUrSmNDL0QvUFFSMmdBY0J5d0NPQ3RBZUl6QnJnbit2Z3hrRWRJQS9BSXcxNVpHU2RFd0IzR1NDd0EwUUJXTllGRFh2MmJGNXZER251bThSSElSM0FHNjhwYlg0UFZZT2ZGcnV1Y3dLQVpZQWZUbUhPaHRBMkxBQmEwWDk3TEJrMXdGWUJvUFFBeU96RmtjMjlVM2dUMEFFV0FGalhXUUZ3L3duOEd0QUJsUXNCQkFXQWM0UFh6OE8zQ3VpQXlvVUFnZ0xRREwwVUlNbzZvUEl4L2dFQllCbGcvUE4zdklSelFIUUFObVZtQU54dmdLQU9xRnljL3lFQmFJWmZDdkNwR1JqTUFaV1A4UThIZ0lRQmVCdEMyNFFCS01yc0FPQVk0T25YYnhrSGMwQk1BS3E2ekErQTVyNk5vQUViUXZjNW9ISXcvWWNFZ0dPQXhmajM3eG1GY2tBMEFEWjFtU01BTEFOY2VTUk9NQWRFQXFEcXlqSkxBSVFNVUphaDNoOFFCUUI2TE1zOEFWaUtqVnNUeUFGUkFLaW95eFFBbGdGV1liN0paZzFRRlZrQ0lIZmVyZ0k1SU40cVlQcVFId0JMd1ZFTHRBNkkyUWVZRnJrQklEbHZ2NFJ4UU54T1lMakZBRmt6d05PdHN6YVFBN0FaRk1zQXo3ZStqZE1NM0NZTFFLaCtNSmt6d1BqV3R6MEhjVUQ4QzBMV1hUWUFjQXp3NSthM2hYRUFyZ21NWklEUjdlOEw0Z0JjRmg3SEFJdng3ZThiaFhDQWpSdERLQXNBR3FHTm9DRWJRb01kWUFPQTJVTUdBTEFNMFBUNXhxY0FEakFDZ0hvZFFNWU04Q28rcGF6U0JrRDVFVUVoQUpBZkxoWlNMNGtETUYwbURvRDBHb0M3RU53bURvRHlEUUpreXdBOVQ5Y0E2d0E3QU9pV0FaU2dBWGdiUWdNZFlBaUFkZEtQaTJmZEQ5QjN1ZzdnQUVNQXBQM09JSllCbnZ0K0srZHhRY01jd0FPZ2VyZ1NJdHJRZEcxekpVQXBHb0MzSVRUTUFlSlBDYXU3WWpNZENFQ1ZMZ0FxQmdqaEFKMEhSWFkwTlZZSFVwSUdDT0FBdFdjRkY1V3BLWUFzR1dEYy8zdEgyZzVRZkZ4OHNUWlVCWkFoQS94aGZQRlkyd0dhYnd5cCtZK01wVVFCWUJtZzRYenprN0lETEwwNjlwSTZUUUFhNFVzQkJuN3ppelVBN0R3MW51d1k0SW0xNnpGZTZEcEErODF1VnQ0YlFZa2FnUGU0b0FFT1VIKzFIOWtvQThtT0FWNTUzNjI4RGxBSG9GNmJjQURaTVFEekxIM1JkWUQreXowTEU2MEFNbU1BN2hncE95REEyMTByQytzQVN0VUFyRWZHRFhCQUFBQUtDKzFnTW1PQVpzVE1WclVYRkFDQTVWci9iMFFGZ0hWSDJOT0NteWRWQjRSNHdUY1pLQUxJaUFHMHczWkFDQUI0THhIV3VUQklFWURWazZHd0hSQUNBT1pLc0VzTWdOZUZKUUs0RGdnQkFQT1BGSWtCMEpnQ2dPdUFJQUJRL0ZZUStUQUEzd0ZCQUNoeUJzQ1lBYmdPQ0FKQUYzOFpRRTRNd0haQUVBQWVlY3VBWlVvQUdETUEyd0ZCQU9BdEExVFdnZVRHQUV3SEdBUmc5cGdTQUkwNUFIZ09DQUxBTW40amdMd1lnT3NBQUpDZEFYZ09zQWhBa1JBQWpVRUFXQTZ3V0FNa0JJQkJBekFkQUFEeU13RExBUWI3QUNrQjBKZ0VnT01BZzUzQWhBQXdhUUNlQXd6dUJTUUVnRkVEY0J4Z2NEY3dJUUFhb3dBd0hHQVJnR1Q2QUVZTndISkFDQUNZYllCMEFEQnJBSVlEN0YwVG1CQUFqVmtBK2p2QTNsWEJPcmVHa0NjRGNCd1FBZ0RtODRLUzJRNDJiSUQrRHJCM1o1RE9IZUxreWdBTUJ3UUFnR3VBVkM0Sk0yd0FoZ1AwQWVDV2dEcjNocEV6QS9SMmdENEE3Q2NHcG5KVmNHTWFnTDRPTVBlRWtHUnVEREZ0Z1A0TzBBYWdZSTkvS3JlR0dUZEFYd2NvQTlEeHh6K1ZtME1iNHdEMGRJQXVBQVBHUDVYYnc0MGJvTGNEVkFGNEdQTEFhRW9EQVBNRzZPa0FSUUFHUENrMm9VZkVOT1lCNk9jQU5RQnFHdmpxaURRZUVzVTB3RUlvOGc1UUFxQWJPdnlwUENhT1o0RHRzMUMyNGc1UUFLRHU2STQzRVNYeW9FaVdBWGlQaDc2V2w0VzBBNWdBMU5meTJCVUZiYXA3M2hxVXlxTmltUVpZUnZtN3ZSeGc2YTFoQ1Qwc21tVUE1dU9ocjBiY0FkWUFTT1J4OFR3RHZNcjk0V2RwQjFnRElJMFhScXdVRnVTUkhGRDVtQUNFQWVBWllDVDVwNlVkWUF5QVJGNGExWWdYNDcwekV2N1R0Z0JJNUxWeDhRekFlNDFZSHdmWUFpQ1JGMGZ5RExDVi9TWEM4RlUrSmdCWkFDSWFRUHlQVnk0cUFGa0FZaHFBOXhxeEh0TVBYaCt2dmc4UWR4dHFsUTRBNnpvUkFIaVQ4TFAwVDVGZEIxUWVLa0JaQUppbjRGajZwN3lJT3FCeUlRQlJBT0lhUU5vQlpnQ1lscWtBME1SckF3NW9CdDV5Z0JrQTZsUUFpRzBBN29iUU5nMEF1aklWQUpoWGd5cjhGbEVIVkE0S1FGa0FtbGlYQXVnNG9QSXgvbklBOEU2L3hWamp4NHdFSFZENUdIODVBSmdHMEhqNUJXOUQ2SVlES2gvakx3ZUFBUU13TjRTdU95QStBT3V1VEFnQXBnRmVkWDVOSStlQTZBQlFYYVlFQU5NQUs1MWZNNWI3TDJJRFFHV1pGQURSdTBCdldjbzVJQzRBVlZlbUJjRHFTYklMWjhFQk1RRllQNVJsWWdEWU1BQnpRK2pxLzFGbGIzOVJBSnFZRjRPcHpFVFJBTmc4bG1WeUFGZ3hRRmx1cFVpTUE4Q2F3ZzYvRkFCV0RDRG9nQmdBVkE5MVdTWUpRQlA1VWdDRnVhZ0tmL0ozWllSUWhLUCtyUG1EZUhjSWJZMEFNS1Z1V1piSkFzQTB3Rmp6QnowTE9hQUtlT28vUEpiUlFua1pnTHNoOUxzRGdnQ3dyalpGckZOZkVBQ21BVWE2djBqb21YRzZBS3luMVlhS3JpNmpSd0tBMXljN0JpakxrY3llY0xVV3puUTZyU3JhRUQwVTNhT0JrWmRVd0pJVjdaOGs4OThzcFZQYURKV0k2d0FBQUlBQUFBUUFJQUFBQVFBSUFFQUFBQUlBRUFDQUFBQUVBQ0FBQUFFQUNBQkFBQUFDQUJBQWdBQUFCQUFnQUFBQkFBZ0FRQUFBQWdBUUFJQUFBQVFBSUFBQUFRQUlBRUFBQUFJQUVBQ0FBQUFFQUNBQUFBRUFDQUJBQUFBQ0FCQUFnQUFBQkFBZ0FBQUJBQWdBUU9JQWNNQXg4SndEQUFBQWlHc0FUamdJbm5PaUhRNkM1K3dBZ0hjQVdod0V6MmtCZ0hjQWpqZ0lubk9rQ1E2QzUweG9qa2FBNXpiQW5PWm9CSGh1QTV3QndEclE4eXJ3RE1BZWg4RnY5bWNBc0F6d3ZBZzRBekRIWWZDYitRVUFMQU1jTHdJdUFLQUtkRndEWGdCQUZlaTRCcndBZ0NyUWNRMTRBUUROWUxlWnZBR0FYcURYbk9idkFLQUk4RnNDdkFHQUlzQnZDZkFHQURvQmJyc0Fmd0ZBSjhCckYrQXZBTGdzekdYYS93REFkb0RMelA4UEFCYUNUaGVCSHdCZ0llaDBFZmdCQUJ6ZzFRQWZBTUFCVGczd0FRRFdBVDdYQVA4QmdBMGhkNWw4QVFDOUlHL1p6YjhDZ1AwQVp6bCtBd0Q3QWI1eW1IOEhBSzBBaDAyQXp3Q2dGZUN3Q2ZBRkFKU0JEa3ZBendDZ0RIUllBbjRHQUZPQXh3bmdNd0NZQWh4T0FKOEJ3SWFBbDV6bVB3T0FEUUVuYVg4QkFGT0F2d25nS3dDb0FyeFZBTjhBd0JUZ2JnTDRCZ0NtQUc4VHdEY0EwQXR3MVFQNEFRRHNDR1NmK1hVQXNDbVllZlkzQU1CMUFYbm5NTDhGQU9wQVJ4WGdUd0NnRG5SVUFmNEl3QVFTeUZjQWt4NEFZRXNnMzdUelBnQkFBbjRFOERNQWtJQWJBZndNQUNUZ1JnQy9BQUFKZUJIQWJ3QmdXekMvbk9ZY0FMQW5rRjNtUEFCUUJuZ29BSzRBZ0YyaHZMS2Zjd0ZBR2VDZ0FMZ0tBTG9CbVhjQWJnR0FRakQ3QXZBV0FOZ1p6aVRIZ1FCZ0taRDNBdUEyQUZnS1pMMEE2QUVBQ01oOS9HOEJBQUl5SC8rYkFJQ0F2TWYvTmdBZ0lPdng3d0VBQ01oNS9Qc0FBQUl5SHY5ZUFJQ0FmTWUvSHdEb0NHWFgvMkVDZ0s1d2Vqbk9KUUhBUFlPSjVkQjNYSHNETU1HRm9nbGxOeEVIQUtWZ2J1VWZHd0NVZ25tVmYzd0FjSmxZRWpteGhwUUhBRFNRMWZRL0FJQjVpOVdBN2VxL25lc0NnTlZBSnRYL1lBQXdDV1IwK2c4REFKTkFOcWYvUUFBd0NlUnkrZzhHQU11QjFJdi91d0hBTXdSc3pmNkRoM0U0QVBNakVMQXkvTWQ1REFET3BRQTZneFk2ZiswOVkzZ1hBRUFnOWVHL0d3Q0lJTjNKWHdnQUlKRHk4SXNBY0ZrVW9pOFFmdDIvRnhrNkdRQXdEYVI0OG9zQ01KOVBVQkNHSy93bVlzTW1COENiQ3NDQS91anZSWWRNRm9ETHduQ0hla0RQKzd0V2VyekVBYmpVQTVnSWRFNzlvOEpnYVFEd0RnRm1Bc2t6WDJYd05RRjRwNkRkbllEQmZVTi8yclZIelRGU0JlQURnM1ozQnVFQUZQb1ArK0U4OEx0V2QramY4ejhDak1KNERpcGk3d0FBQUFCSlJVNUVya0pnZ2c9PSIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmciLCJwdXJwb3NlIjoiYW55In0seyJzcmMiOiJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQWdBQUFBSUFDQU1BQUFERHBpVElBQUFBWUZCTVZFWC9jQzE3ZzcwOWgvNDdnL2M3Z3ZjN2d2WTdndlU3Z2ZRNmdQTTNlZVAvYkN2L2F5ditheXY4YWl2OGFTdnZaU2xmVDJkRUpSOFRIellNREJJTkN3OE1DdzhLQ3hFTENnOEtDaEFLQ2c4S0NnNEpDZzhJQndnQ0JnNEhBZ0VBQkExMTF3ZTBBQUFPVmtsRVFWUjQydTJkNjNhaVNCZ0ErK2dJa3Fnb0dCUkU4djV2dVkyWm1VMG1obTc2Z2g5SjFiODlPNU9jTTVSZGN1dFAxZkNqVWZ3VElBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBQzhFK0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDQUFBakFQd0VDQUFJQUFnQUNBQUlBQWdBQ0FBSUFBZ0FDU09MMFlzWEo4OWRVVHB6UFp3U0l6T1ZxeGNYdnR6U3RFMDNUbkt1cUxFdnRBZ0xFT2Y1SEt3N0hpODhhMEpTRkEyVi81TnUyNjJtYnV2OHZCQWpNOGZXd3pYZEc4bTMrZXZSWS85dGk3VUQybS8yK3Q2SHBOYWhuSXNGc0JMaWNjdlg4Wk9UNUtUOWVUejRDcEVzWEZuOUpleEdLb3RZU1ZETndZQzRDSEsrSHArM0dncDA2ZUN3Qi9RcXdUTWFUOXR3V2cvVFhUWVoxTDBIYk8zQkdnRUFGVU50bkM3WXE5eFpnNVVQU201QXVmMHZRZG8xc0JlWWlRRjhBS3dFMlhnMElJTUFmRGRiclplOUFVV29GRUNCRUFUYlB6M1pMZ0VjRGdnbHdrMkM5L3JWWVpQdXlxeXNFbUtnQW5nMElLc0NiQTFxQm91bkVkbUFtQWxnWHdMTUJvUVhRcERjRnVuT0ZBSk1Vd0s4QkVRUzRLYkRjdDIySkFGTVV3SzhCVVFSWXJkYkpJaXRsR2pBUEFVWVV3SzhCa1FUUTN3VjBCa1FhTUFzQlJoWEFxd0d4Qk5DTGdGQUQ1aUhBbUFKNE5TQ2VBTDBCWlZzaGdGTUJYdkl4QW5nMElLSUF2UUZ0ZlVhQTZBWHdhVUJNQWJRQis2NUVnT2dGOEdsQVZBR1NkRm1JTTJBT0Fvd3NnRThEb2dyUVI2QmhCWWhmQUk4R3hCVkFHeUJ1Q1ppREFHTUw0TkdBeUFLaytreWdPU05BNUFKNE5DQ3lBQUtYQVBrQ09CVEF2UUd4QmRCTFFNc0tFTDBBN2cySUxjQktud2pJdWhva1h3Q0hBcmczd0VLQTlPNXp3V2t5MDJzQjRnVndLb0J6QTh3Q3BJdjdMTk4xYXRlQWM0TUFzUXZnM0FDakFQb0E3dStRWld2dGdKVUN3aG9nWGdDbkFqZzN3Q2hBdjRUZm95NktmYVlWbU4xNWdIUUJIQXZnMmdBckFjclBWSFhiZGVWK3ZWaGJYQTFFZ1BnRmNHMkFuUUIzLzJaWk5sMlJHUTFJaFYwT2xpNkFZd0ZjRytBdXdNMkJ0alVha0N4bFBSWWdYQURuQWpnMndFdUF1aTZieHJ3R3lQb1dLRjBBMXdJNE5zQlRnTHEwdUk0ZzYxdWdjQUdjQytEWUFGOEI2ckxiRzVhQU5RSk1VZ0MzQm5nTFlMNlNKT3hhb0hBQkJndWdGL2w4K0g5UEwwQmRkWVp2QVFnUXJBQTdkUmp5dzZVQi9nS1VYWUVBRXhWQXIvSEgzY0FmY0doQWlCV2dNQ1VnUTRBZ0JlZy80YStCR3hCQWdMYklERDhoNnpnTkRGRUFmWHl2MnBCZHlBYjRDM0J1eW15UklzQTBCWGk5SHJhYmtPY0JJUVNvekFLUWdFQUZ1TDVjd2piQVh3Q05TUUMrQkFZcndNc3hjQU1tU1FBQ1dCZEFEYXp2dC8zZ0RIOW1kQU1RWUQ0RmVONGRyaStueXpGb0E0S2NCWmgrQXBlQ1F4WGcxRnVTaDJ4QWtPc0Fnd3ZBS3RFQ2NCYmdYNERmcTd2aGR1SFlCb1M0RWpoOE40am5BY0lVNEhtejBRV282NzRCZ3hjRDg0a0ZxQXpQaFBCRVVMQUNYSDU3a2dlOEh4RGlibUQ2YTA0dkJpakpDNERwSE1CaW9SalpnUGpQQS9CVWNLQUMvRG13cDJ2SUJuZy9FZFFWUzhNamdXdmVDd2hUZ0QrVFFWNnVBUnZnKzB4Z2E3Z0lJTzFPZ0Z3QmpBWDQrOEVldmhnNHNnR2VUd1YzWlRhdkI4SmtDMkNYOXBmcllSdnMyVkJYQWZxQlVWVnJmaTlBM2c0UlVnVVlMa0Mvc1A4L0crb1NyZ0YyQW53YUdsYzNiZGUxK3ZDYm5nbVh0MUdZa3JzQWJDdy8xaUViWUNYQW5hRnhaZjlxNEhLUnBtd1JNM1VCTEM0WjVnRUZTSmZaWGRhTHhTS3hlREdRVGFKQ0ZlRC9aZDF3UTJoVUF5dzJpUERZSHFEZksxVGFackZxcGdYb0x3UC8vNmZ6VUExdzNDRWt0ZG9nUks4ZUJRS0VLTUEvbytHTXZjaERDdUMrUFZBaUx3QlNCVEM5RWJZOXZGOEJERGVFeGpRZ29nQnBLdkg0eXhUQW9nQ25qMzgrRDNRL0lKNEE2VXJpVnRHQ0JiQXZRTWdHUkJOQW55VVVuY1M1VVdxR0JkZzhIYTRmRHFqaGh0Q0lCa1FTSU8zbmhYVE1EQXBXZ05QbDQ5OFl2aUUwb2dHeHBvWXRzckpqYWxpTXEwQ1dGd1B6Undwd214c29kR3FjU0FFTUJiZ2pnT0dHa0gwRFlnaWd6LzdyVnV3Z2VUVzdBbnk4RWZUM1REQk1BNktzQUZvQXVUUEUxUXdMY0djOUQ5V0FXQW5vQjBqekhjQzJBTWZ4bjJiRGU2VFdEWWdpd0RydEZhaGxEcEJXMzZJQXBodEMxZzJJZHhyWWZ4R1VPRVZlZllzQ0JHdEF0QXRCdlFJaUIwaXJiMUVBODBQRWxnMklPVGswRlRsQVdzMndBUGVPcE9HR2tHMERJZytPekpnYkdLQUE3MjhFdnY5N2VZRDdBZEhuQm9vYklLMW1Wb0RkVjUva01BMklQamRRM0FCcE5hOEMvUHNvd0xzR1hFTTBJUDdZdU96TVkrRitCYmg4OFRrMjNoREtCUWpBMEtoWUJUQ2VDTm8xd0VLQUpMMUxZbTBBTDRkNkZPRFRvd0R2VjREQkcwSjJEYkFRWUhuL3FlQmxhamM3TG1XRENMOEN2RnkrK3J2R0cwSjVBQUdTTDk0THVMMFlZRFUzakUyaTRoUWdUQU1jWHcwcnk3TG8zdzNTRnBnVmtEVThWTTJxQUlQTHVHbTRnRTBEN0FSb1B0TzJYZjkyNE43OGVxQ3dOOFRWbkFwdy8wYlErNHVCdmcyd0UrQjhoMzRaT0xkZFpURTRUTlRVSURXbkFoZ09ZWUFHZUc0UVVaVjFaOW9pUXRpM0FQVnRDbUNlTUdYUmdBRGJ4TFhHcVVHM25lTE9DQkQ4Y3E3NWhsQWVYNEM2cW1ZMU4wcVVBT1lDWEkvREF1V2U5d05DN0JaZTFhMXhiSkNjdDRTVnNBWEFVSURyY1pDcmJ3T0NiQmRmdGtYeWF5NWJoVWtUd1BBQmZqWGcyNEFnQXN4cXMwQTFud0pzVkg0dzR0bUFNQUxvbjdLY3kzbUFtazhCbnArZmxKRW52MW1TWVFTNGJSaWNEdThWSk9VMFFNMm1BTGNEYU1Sem5uQWdBYXkyREQ4andLZ0NoTURZZ0ZBcmdIRm9nSmlMZ1dwR0JRaUFxUUhCRWpDYnNTRnFUZ1VJSVVBK2hRQXpHaHdrUm9EVEJBVXdOeUNRQU1heEVRandtQUlZR3hCTWdNNGtnSlJid3VwSEZjRFlBQVQ0M2dVd05tQkNBVGdMZUVRQlRBMllTZ0E1bzZQVXp5cUE2WmJpVkY4Q0VlQkJCVEExSUpRQXBoSGlDUENvQWhnYUVPbzZRRnRteTNuY0RGQS9yQUNHQm9TN0Vqajhla25LbDhBSEZjRFFnR0EzZ3dyak0wR2NCajZtQU1NTkNDWkFoZ0JDQ3pCOExTaU1BTGV2QU1tS1M4RVNDekRjZ0lrZUNVT0FCeFpnc0FGQkJERGVDK1IyOENNTE1OaUFNRThGR3hlQVZTcG1lb0Q2Y1FVWWJFQUlBZm9CMGtreWx4SFM2dWNWWUtnQi9nS2M5ZkVmdmdqMGRobWc0a3Jnb3dvd2RDM0lWNEJ6MlhRVzd3Y0xla05jemFFQW0rMTQzQnJnT1QxY0gvNXl2MXdhOTRqZ3ZZQnhCYkI0SCtBVGJnMndFK0F1VlQ5QXV0UWYvNVY1bXhoQk93UW8rUVhRbjFjSERKdUZmTkVBS3dHKzRGeThiUkJpM2lsSzBneHBKYjhBL2NmMStqcUs2K3RoczNGcGdIbDQ5Q0lyN3JEZjc5LzJpYkxZSlVyV0RoRktmQUZ1KzhJY3gxTG5UdThKT3crUGZ0c2p6T3J3UzdvS0lFV0E3YlBEOXRDK1A5UlJnSHZEbzk4bVNOdnVGU25uYVJBSkFoZ0xzQnN4L0h2TTk0cTdEWWkrVmF5NHpVS1Y5QVhnNisyaFRWcTU3QmszaFFEOVhxRnlOb3hXY3lqQXllWEg1aTRObUVJQVdWdUZLdWtGMkxvVXdMa0JFd2dnNlJ4UWdBREdBbXcyRGdWd2JzQUVBZ2piTGx6Skw4REY4UWU3TkNDK0FMSTJpbjI0QUhIT0Fkd2JNTUhBQ0dGRFk1VHdBbXhkQlRoZGo3dnhEWWd0UUxvU05pOUN1Z0I2b1I3WUhub1F3d2laK3cySUxFQ1NTanYrRHhZZ1hnR01XMGZmYjBCY0FkSlUyc1NnUndzUXJ3QnZJMlEyWTM5MlZBSFNSQi8vNm93QTQ3NnBPUlpBY3huZmdKZ0NySmY5UFNCcEU4U1Y2QUxZem53TzFvQjRBcVJ2ZzJQRlRaQlgzN1VBTmpNb1AvLzBXQUlrK3VNdmNIQ3dkQUZzWjM2N3J5L1hTUVJJMXF0K2FyREE0ZkdQRlNCdUFkNHVCbzVzUUF3QlV2M3BUL1psVjFVMUFreFlBS2VmSDF5QWROMlBrdE9ydjhpUHYzQUIvQXBnZFVQbzN3WUVGU0RSUjMrNVdHVDcvdkJYTlFLNE5QckZ6N0I4cEdHaEJPaVBmWC93RjFsV2xJSVAvME1GTUs3UU83OEN1RFRBVDRDa0h5eDllenp3Tm1CNHJULzdaZGMxZ2cvL3d3WFlEYi9lYy9CYkFVN1hZejc0VnRIdTMyK1p2UUJmakFjM2txeVd5eitUcGRlWlB2aEYzZWtQdjd4VGZ5RUMzQW93VE83ekRlRHRjckRwVjJ5T0h4elRBaXljK2JWZTMrWkk2ME5mbEswKytIVXArc1AvZUFHTUU0QXVKOS9mWWZ3Vkh5ODFuNXV5OEtFcyt4ZkU5TEZ2cWhrYy9FZWZCVnlNTC9pY3ZDMHp2bEwwcjJOTjUweXJhZnBYUk11cU90Y3o0YkZYQWcyOCtQK0tGOVB2K1B4UWtCZXpPZkFpQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJBQUVBQVFBQkFBRUFBUUFCQUFFQUFRQUJJQXArQS9tY0lCdGduOE9Zd0FBQUFCSlJVNUVya0pnZ2c9PSIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmciLCJwdXJwb3NlIjoibWFza2FibGUifV19">
 <title>ABracadABra</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap');
@@ -300,6 +320,13 @@
   .dur-val{display:flex;flex-direction:column;align-items:center;min-width:70px;}
   .dur-val #dur-display{font-family:var(--font-d);font-size:44px;font-weight:900;color:var(--orange);line-height:1;}
   .dur-unit{font-size:12px;color:var(--text-dim);}
+  /* v4.9: tap the number to type an exact value */
+  .dur-type{font-family:var(--font-d);font-size:44px;font-weight:900;color:var(--orange);line-height:1;background:transparent;border:none;border-bottom:2px solid var(--orange);width:100px;text-align:center;padding:0;-moz-appearance:textfield;}
+  .dur-type::-webkit-outer-spin-button,.dur-type::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .target-type{font-family:var(--font-d);font-size:38px;font-weight:900;color:var(--text);line-height:1;background:transparent;border:none;border-bottom:2px solid var(--orange);width:86px;text-align:center;padding:0;-moz-appearance:textfield;}
+  .target-type::-webkit-outer-spin-button,.target-type::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .tap-hint{font-size:10px;color:var(--text-dim);opacity:.8;margin-top:2px;}
+  .side-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.4);}
   .dur-start{margin-top:4px;padding:12px 40px;background:var(--green);color:#fff;border:none;border-radius:12px;font-family:var(--font-d);font-size:20px;font-weight:700;letter-spacing:.5px;cursor:pointer;}
   .dur-start:active{background:#16a34a;transform:scale(.98);}
 
@@ -448,6 +475,7 @@
       <div class="version-tag" id="version-workout" style="text-align:left;margin-top:1px;font-size:9px;"></div>
     </div>
     <a class="header-ideas" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
+    <button onclick="openLineup()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;font-family:var(--font-b);">☰ Lineup</button>
     <button onclick="exitWorkout()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:var(--font-b);">Quit</button>
   </div>
   <div class="workout-top">
@@ -460,6 +488,7 @@
       <div>
         <div class="active-title" id="active-title" onclick="openInfoCurrent()">—</div>
         <div class="active-sub" id="active-sub">—</div>
+        <div class="active-sub" id="side-label" style="display:none;font-size:12px;margin-top:2px;"></div>
         <div class="active-info-hint" onclick="openInfoCurrent()">ⓘ Tips &amp; YouTube →</div>
       </div>
     </div>
@@ -471,7 +500,12 @@
       <div class="target-display">
         <div style="display:flex;align-items:center;gap:10px;">
           <button class="dur-btn" onclick="adjustRepsTarget(-1)">−</button>
-          <div><div class="target-big" id="target-num">12</div><div class="target-unit" id="target-unit">reps</div></div>
+          <div>
+            <div class="target-big" id="target-num" onclick="openRepsInput()">12</div>
+            <input class="target-type" id="target-type-input" type="number" inputmode="numeric" min="1" max="999" style="display:none;">
+            <div class="target-unit" id="target-unit">reps</div>
+            <div class="tap-hint" onclick="openRepsInput()">tap to type</div>
+          </div>
           <button class="dur-btn" onclick="adjustRepsTarget(1)">+</button>
         </div>
         <div style="text-align:right;"><div style="font-size:13px;color:var(--text-dim);">Set</div><div style="font-family:var(--font-d);font-size:28px;font-weight:800;" id="set-display">1/3</div></div>
@@ -494,13 +528,23 @@
       <div style="display:flex;flex-direction:column;align-items:center;padding:16px 18px;gap:12px;">
         <!-- CHANGE 1: per-set duration picker, always shown first -->
         <div id="set-dur-picker" style="display:none;flex-direction:column;align-items:center;gap:10px;">
-          <div class="dur-lbl">Hold duration · this set</div>
+          <div class="dur-lbl" id="dur-lbl">Hold duration · this set</div>
           <div class="dur-row">
             <button class="dur-btn" onclick="adjustSetDuration(-5)">−5</button>
-            <div class="dur-val"><span id="dur-display">45</span><span class="dur-unit">sec</span></div>
+            <div class="dur-val">
+              <span id="dur-display" onclick="openDurInput()">45</span>
+              <input class="dur-type" id="dur-input" type="number" inputmode="numeric" min="5" max="900" style="display:none;">
+              <span class="dur-unit">sec</span>
+              <span class="tap-hint" id="dur-hint" onclick="openDurInput()">tap number to type</span>
+            </div>
             <button class="dur-btn" onclick="adjustSetDuration(5)">+5</button>
           </div>
           <button class="dur-start" onclick="startTimedSet()">▶ Start Set</button>
+        </div>
+        <!-- v4.9: DUAL-SIDE switch break — timer restarts for side 2 -->
+        <div id="switch-area" style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="countdown-prestart" id="switch-num" style="color:var(--blue);">5</div>
+          <div class="countdown-prestart-lbl">🔄 SWITCH SIDES</div>
         </div>
         <!-- prestart -->
         <div id="prestart-area" style="display:none;flex-direction:column;align-items:center;gap:8px;">
@@ -604,6 +648,18 @@
       <div class="reason-list" id="reason-list"></div>
     </div>
     <div id="swap-opts-list"></div>
+  </div>
+</div>
+
+<!-- TODAY'S LINEUP SHEET (v4.8 — read-only peek at the day without leaving the session) -->
+<div class="modal-overlay" id="lineup-modal" style="z-index:512;" onclick="closeModal('lineup-modal',event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Today's Lineup</div>
+    <div class="edit-sub" style="margin-bottom:12px;">Your session is safe — nothing here interrupts it.</div>
+    <div id="lineup-list"></div>
+    <button class="edit-cancel" style="width:100%;padding:14px;margin-top:10px;" onclick="closeModal('lineup-modal')">◀ Back to my set</button>
+    <button class="edit-cancel" style="width:100%;padding:14px;margin-top:8px;" onclick="closeModal('lineup-modal');openSessionSwap();">⇄ Swap current exercise</button>
   </div>
 </div>
 
@@ -724,7 +780,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.9';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -752,27 +808,27 @@ const DB = {
     {name:'Hollow Body Hold',sets:3,reps:30,unit:'sec',tip:'Arms and legs long as possible. Lower back stays down. Breathe.',gym:true,home:true},
   ],
   oblique:[
-    {name:'Oblique Crunches',sets:3,reps:16,unit:'reps',tip:'Per side. Drive elbow toward opposite knee. Slow tempo.',gym:true,home:true},
-    {name:'Russian Twist',sets:3,reps:20,unit:'reps',tip:'Per side. Feet elevated makes it harder. Touch floor each side.',gym:true,home:true},
-    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Per side. Control the weight — don\'t let momentum do the work.',gym:true,home:true,weighted:true},
+    {name:'Oblique Crunches',sets:3,reps:16,unit:'reps',tip:'Alternating. Drive elbow toward opposite knee. Slow tempo.',gym:true,home:true,altSide:true},
+    {name:'Russian Twist',sets:3,reps:20,unit:'reps',tip:'Alternating. Feet elevated makes it harder. Touch floor each side.',gym:true,home:true,altSide:true},
+    {name:'Weighted Russian Twist',sets:3,reps:16,unit:'reps',tip:'Alternating. Control the weight — don\'t let momentum do the work.',gym:true,home:true,weighted:true,altSide:true},
     {name:'Hanging Around the World',sets:3,reps:10,unit:'reps',tip:'Full circular leg path. Each direction = 1 rep.',gym:true,home:false},
     {name:'Hanging Pendulum',sets:3,reps:12,unit:'reps',tip:'Legs together, swing side to side with control.',gym:true,home:false},
-    {name:'Side Plank',sets:3,reps:35,unit:'sec',tip:'Per side. Stack feet or stagger for balance. Drive hips up.',gym:true,home:true},
-    {name:'Woodchopper',sets:3,reps:12,unit:'reps',tip:'Per side. Rotate through core, not arms. Slow the return.',gym:true,home:false,weighted:true},
-    {name:'Bicycle Crunches',sets:3,reps:20,unit:'reps',tip:'Per side. Slow it down. Full rotation — opposite elbow to knee.',gym:true,home:true},
+    {name:'Side Plank',sets:3,reps:35,unit:'sec',tip:'Per side — hold one side, switch, hold the other. Drive hips up.',gym:true,home:true,dualSide:true},
+    {name:'Woodchopper',sets:3,reps:12,unit:'reps',tip:'All reps one side, then switch. Rotate through core, not arms.',gym:true,home:false,weighted:true,dualSide:true},
+    {name:'Bicycle Crunches',sets:3,reps:20,unit:'reps',tip:'Alternating. Slow it down. Full rotation — opposite elbow to knee.',gym:true,home:true,altSide:true},
   ],
   core:[
     {name:'Plank',sets:3,reps:45,unit:'sec',tip:'Squeeze glutes, brace abs, neutral spine. Don\'t let hips drop or pike.',gym:true,home:true},
-    {name:'Dead Bug',sets:3,reps:10,unit:'reps',tip:'Per side. Press lower back into floor throughout.',gym:true,home:true},
-    {name:'Pallof Press',sets:3,reps:12,unit:'reps',tip:'Per side. Anti-rotation. Don\'t let the cable pull you.',gym:true,home:false,weighted:true},
-    {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Per side. Extend opposite arm/leg. Don\'t rotate hips.',gym:true,home:true},
+    {name:'Dead Bug',sets:3,reps:10,unit:'reps',tip:'Alternating. Press lower back into floor throughout.',gym:true,home:true,altSide:true},
+    {name:'Pallof Press',sets:3,reps:12,unit:'reps',tip:'All reps one side, then turn around. Don\'t let the cable pull you.',gym:true,home:false,weighted:true,dualSide:true},
+    {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Alternating. Extend opposite arm/leg. Don\'t rotate hips.',gym:true,home:true,altSide:true},
     {name:'Mountain Climbers',sets:3,reps:40,unit:'sec',tip:'Hips stay level throughout. Fast or slow both work.',gym:true,home:true},
     {name:'Hanging L-Sit Hold',sets:3,reps:25,unit:'sec',tip:'Legs parallel to floor, toes pointed. Every second is a win.',gym:true,home:false},
   ],
   posterior:[
     {name:'Back Extension',sets:3,reps:15,unit:'reps',tip:'Don\'t hyperextend at top. Squeeze glutes. Weight optional.',gym:true,home:false,weighted:true},
     {name:'Superman',sets:3,reps:40,unit:'sec',tip:'Hold position. Squeeze glutes and lower back. Chest off floor.',gym:true,home:true},
-    {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Control every inch. Pause at full extension.',gym:true,home:true},
+    {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Alternating. Control every inch. Pause at full extension.',gym:true,home:true,altSide:true},
   ]
 };
 
@@ -858,6 +914,9 @@ let settings = {
 let restTimer = null, restEndTs = 0;
 let exTimer = null, exTimerPaused = false, exTimerRemaining = 0, exEndTs = 0, exTotalSec = 0;
 let prestartTimer = null, prestartEndTs = 0, prestartTargetSec = 0;
+// v4.9 DUAL-SIDE: exSide is 1 or 2 within a set; switchTimer runs the 5s side-change break
+let exSide = 1, switchTimer = null, switchEndTs = 0, switchLastTick = -1;
+const SWITCH_SEC = 5;
 let audioCtx = null;
 let lastDeleted = null; // EDIT 2: undo buffer for history deletes
 
@@ -883,6 +942,58 @@ function load() {
     const lu = localStorage.getItem('abra_lastused'); if(lu) state.lastUsed = JSON.parse(lu);
     const luw = localStorage.getItem('abra_lastusedweight'); if(luw) state.lastUsedWeight = JSON.parse(luw);
   } catch(e) {}
+}
+
+// ═══════════════════════
+// SESSION PERSISTENCE (v4.8)
+// An in-progress workout used to live only in memory. Any reload, back-out, or Android
+// process kill wiped both the progress AND the day's lineup (generateWorkout() re-rolls
+// at random on every load). saveSession() is called at every state checkpoint;
+// restoreSession() rehydrates on init before anything draws.
+// ═══════════════════════
+const SESSION_KEY = 'abra_session';
+const SESSION_MAX_AGE_MS = 18 * 60 * 60 * 1000; // an abandoned session older than this is dropped
+
+function saveSession() {
+  try {
+    if (!state.workout || !state.workout.active) { localStorage.removeItem(SESSION_KEY); return; }
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      version: APP_VERSION,
+      location: state.location,
+      todayEx: state.todayEx,
+      workout: state.workout,
+    }));
+  } catch(e) {}
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    // shape check — a malformed blob must never half-restore
+    if (!s || !s.workout || s.workout.active !== true) { clearSession(); return false; }
+    if (!Array.isArray(s.todayEx) || !s.todayEx.length) { clearSession(); return false; }
+    if (!Array.isArray(s.workout.setsCompleted) || s.workout.setsCompleted.length !== s.todayEx.length) { clearSession(); return false; }
+    if (!s.savedAt || (Date.now() - s.savedAt) > SESSION_MAX_AGE_MS) { clearSession(); return false; }
+    state.location = (s.location === 'gym' || s.location === 'home') ? s.location : 'home';
+    state.todayEx = s.todayEx;
+    state.workout = s.workout;
+    // Timers never survive a reload. Park the user at the start of the current set:
+    // the duration/rep picker re-arms cleanly in renderWorkoutStep().
+    state.workout.exIdx = Math.min(Math.max(0, s.workout.exIdx|0), state.todayEx.length - 1);
+    state.workout.setIdx = Math.min(Math.max(0, s.workout.setIdx|0), 2);
+    if (!state.workout.currentTarget) state.workout.currentTarget = {};
+    if (!state.workout.currentWeight) state.workout.currentWeight = {};
+    if (!state.workout.timerOverride) state.workout.timerOverride = {};
+    if (!state.workout.repMilestones) state.workout.repMilestones = [];
+    if (!state.workout.setLoggedWeight) state.workout.setLoggedWeight = state.todayEx.map(() => [null,null,null]);
+    if (!state.workout.startTime) state.workout.startTime = Date.now();
+    return true;
+  } catch(e) { clearSession(); return false; }
 }
 
 // ═══════════════════════
@@ -1161,6 +1272,7 @@ function startWorkout() {
     currentWeight: {}, // WEIGHT TRACKING: {exIdx: liveWeightLb} — carries forward across sets of the same exercise
   };
   requestWakeLock(); // FEATURE 4
+  saveSession(); // v4.8: session is durable from the first frame
   history.pushState({workout:true}, ''); // CHANGE 3: hardware-back trap
   showScreen('workout');
   document.getElementById('bottom-nav').style.display = 'none';
@@ -1180,6 +1292,7 @@ function resumeWorkout() {
 function renderWorkoutStep() {
   const w = state.workout;
   const ex = state.todayEx[w.exIdx];
+  saveSession(); // v4.8: checkpoint on every set render
   const total = state.todayEx.length * 3;
   const cur = w.exIdx * 3 + w.setIdx;
   document.getElementById('prog-fill').style.width = Math.round(cur/total*100) + '%';
@@ -1188,7 +1301,8 @@ function renderWorkoutStep() {
   document.getElementById('active-num').textContent = w.exIdx + 1;
   document.getElementById('active-title').textContent = ex.name;
   document.getElementById('active-sub').textContent =
-    GRP[ex.group].label + ' abs · ' + (ex.unit==='sec' ? `${ex.reps}s hold` : `${ex.reps} reps`);
+    GRP[ex.group].label + ' abs · ' + (ex.unit==='sec' ? `${ex.reps}s hold` : `${ex.reps} reps`)
+    + (ex.dualSide ? ' × 2 sides' : (ex.altSide ? ' per side' : ''));
   document.getElementById('active-tip').textContent = ex.tip;
 
   // Suggest overload
@@ -1224,10 +1338,19 @@ function renderWorkoutStep() {
     prevEl.innerHTML = prevLine;
   } else { prevEl.style.display = 'none'; prevEl.innerHTML = ''; }
 
+  exSide = 1;              // v4.9: a fresh set always starts on side 1
+  updateSideLabel();
+  document.getElementById('dur-input').style.display = 'none';
+  document.getElementById('target-type-input').style.display = 'none';
+  document.getElementById('dur-display').style.display = '';
+  document.getElementById('target-num').style.display = '';
+  document.getElementById('switch-area').style.display = 'none';
+
   if (ex.unit === 'sec') {
     // CHANGE 1: always show the per-set duration picker first; prestart only after Start Set tap
     document.getElementById('reps-mode').style.display = 'none';
     document.getElementById('timed-mode').style.display = 'block';
+    document.getElementById('dur-lbl').textContent = isDualSide(ex) ? 'Hold duration · per side' : 'Hold duration · this set';
     document.getElementById('timed-set-display').textContent = `${w.setIdx+1}/3`;
     document.getElementById('btn-done').disabled = true;
     document.getElementById('prestart-area').style.display = 'none';
@@ -1325,6 +1448,9 @@ function tickExTimer() {
     clearInterval(exTimer); exTimer = null;
     haptic([100, 50, 100]);
     playChime('rest');
+    // v4.9: dual-side timed exercise — side 1 ends into a 5s switch break, not into rest
+    const ex = state.todayEx[state.workout.exIdx];
+    if (isDualSide(ex) && ex.unit === 'sec' && exSide === 1) { startSwitchBreak(); return; }
     document.getElementById('btn-done').disabled = false;
     setTimeout(() => { if (state.workout.active) completeSet(); }, 1200);
   }
@@ -1342,9 +1468,11 @@ function togglePause() {
   document.getElementById('btn-pause').textContent = exTimerPaused ? '▶ Resume' : '⏸ Pause';
 }
 function clearTimers() {
-  clearInterval(exTimer); clearInterval(prestartTimer);
-  exTimer = null; prestartTimer = null;
+  clearInterval(exTimer); clearInterval(prestartTimer); clearInterval(switchTimer);
+  exTimer = null; prestartTimer = null; switchTimer = null;
   exTimerPaused = false;
+  const sw = document.getElementById('switch-area');
+  if (sw) sw.style.display = 'none';
 }
 
 // ═══════════════════════
@@ -1461,6 +1589,7 @@ function exitWorkout() {
     updateRestPill(false); // CHANGE 4
     state.workout.active = false;
     releaseWakeLock(); // FEATURE 4
+    clearSession(); // v4.8: deliberate quit — drop the saved session
     renderHome(); // CHANGE 3: refresh resume banner vs start button
     showScreen('home');
     document.getElementById('bottom-nav').style.display = 'flex';
@@ -1472,6 +1601,7 @@ function exitWorkout() {
 // ═══════════════════════
 function showRest(sec, nextName) {
   clearTimers(); // BUG FIX: kill any prestart/exercise timer before resting
+  saveSession(); // v4.8: indexes have already advanced — checkpoint before the rest window
   const clamped = Math.min(180, Math.max(30, sec));
   restEndTs = Date.now() + clamped * 1000; // EDIT 3: end timestamp
   document.getElementById('rest-next-name').textContent = nextName;
@@ -1557,6 +1687,7 @@ function finishWorkout() {
   state.history.unshift(entry);
   state.workout.active = false;
   releaseWakeLock(); // FEATURE 4
+  clearSession(); // v4.8: session is finished — nothing left to resume
   save();
   checkSessionMilestones(); // FEATURE 5
   logSessionSilently(entry); // BACKLOG: silent usage logging, no UI, no prompt
@@ -2010,6 +2141,9 @@ function doImport() {
   state.pbs = data.pbs;
   state.milestones = (data.milestones && typeof data.milestones === 'object') ? data.milestones : {};
   if (data.settings && typeof data.settings === 'object') Object.assign(settings, data.settings);
+  // v4.8: an imported backup replaces the world — any in-flight session is now meaningless
+  state.workout.active = false;
+  clearSession();
   save();
   applySettings();
   closeModal('import-modal');
@@ -2087,6 +2221,7 @@ function adjustSetDuration(delta) {
   d = Math.min(300, Math.max(5, d));
   w.currentTarget[w.exIdx] = d;
   document.getElementById('dur-display').textContent = d;
+  saveSession(); // v4.8
 }
 // BACKLOG 3: same live-target mechanism for rep-based exercises (e.g. Hanging Leg Raise),
 // so the target is adjustable pre-set rather than only entered after finishing.
@@ -2100,10 +2235,110 @@ function adjustRepsTarget(delta) {
   v = Math.min(999, Math.max(1, v));
   w.currentTarget[w.exIdx] = v;
   document.getElementById('target-num').textContent = v;
+  saveSession(); // v4.8
 }
+// v4.9: tap the big number to type an exact value (the ± buttons stay)
+function openDurInput() {
+  const disp = document.getElementById('dur-display');
+  const inp = document.getElementById('dur-input');
+  const hint = document.getElementById('dur-hint');
+  inp.value = timedDuration(state.workout.exIdx, state.workout.setIdx);
+  disp.style.display = 'none'; hint.style.visibility = 'hidden';
+  inp.style.display = 'block';
+  inp.focus(); inp.select();
+}
+function commitDurInput() {
+  const inp = document.getElementById('dur-input');
+  const disp = document.getElementById('dur-display');
+  const hint = document.getElementById('dur-hint');
+  let v = parseInt(inp.value, 10);
+  if (!isNaN(v)) {
+    v = Math.min(900, Math.max(5, v));
+    state.workout.currentTarget[state.workout.exIdx] = v;
+    saveSession();
+  }
+  inp.style.display = 'none';
+  disp.textContent = timedDuration(state.workout.exIdx, state.workout.setIdx);
+  disp.style.display = ''; hint.style.visibility = '';
+}
+function openRepsInput() {
+  const disp = document.getElementById('target-num');
+  const inp = document.getElementById('target-type-input');
+  inp.value = repsTarget(state.workout.exIdx);
+  disp.style.display = 'none';
+  inp.style.display = 'block';
+  inp.focus(); inp.select();
+}
+function commitRepsInput() {
+  const inp = document.getElementById('target-type-input');
+  const disp = document.getElementById('target-num');
+  let v = parseInt(inp.value, 10);
+  if (!isNaN(v)) {
+    v = Math.min(999, Math.max(1, v));
+    state.workout.currentTarget[state.workout.exIdx] = v;
+    saveSession();
+  }
+  inp.style.display = 'none';
+  disp.textContent = repsTarget(state.workout.exIdx);
+  disp.style.display = '';
+}
+
 function startTimedSet() {
   document.getElementById('set-dur-picker').style.display = 'none';
+  exSide = 1; // v4.9: every set starts on side 1
+  updateSideLabel();
   startPrestart(timedDuration(state.workout.exIdx, state.workout.setIdx));
+}
+
+// ═══════════════════════
+// v4.9 — DUAL-SIDE SETS
+// Exercises flagged dualSide:true are worked one side at a time (verified against
+// coaching sources: side plank, pallof press, woodchopper). For timed ones the hold
+// runs on side 1, then a 5-second switch break, then the same hold on side 2, and only
+// then does the rest period start. altSide:true exercises alternate within the set and
+// get no break — they are labelled only.
+// ═══════════════════════
+function isDualSide(ex) { return !!(ex && ex.dualSide); }
+
+function updateSideLabel() {
+  const ex = state.todayEx[state.workout.exIdx];
+  const lbl = document.getElementById('side-label');
+  if (!lbl) return;
+  if (isDualSide(ex)) {
+    lbl.style.display = 'block';
+    lbl.innerHTML = ex.unit === 'sec'
+      ? `Side <span style="color:var(--blue);font-weight:700;">${exSide}</span> of 2 · hold each side`
+      : 'All reps one side, then switch · log one side';
+  } else if (ex && ex.altSide) {
+    lbl.style.display = 'block';
+    lbl.innerHTML = 'Alternating sides — count reps per side';
+  } else {
+    lbl.style.display = 'none';
+    lbl.innerHTML = '';
+  }
+}
+
+function startSwitchBreak() {
+  clearInterval(exTimer); exTimer = null;
+  document.getElementById('exercise-timer-area').style.display = 'none';
+  document.getElementById('switch-area').style.display = 'flex';
+  switchEndTs = Date.now() + SWITCH_SEC * 1000;
+  switchLastTick = -1;
+  haptic([80, 40, 80]);
+  paintSwitch();
+  switchTimer = setInterval(paintSwitch, 250);
+}
+function paintSwitch() {
+  const rem = Math.max(0, Math.ceil((switchEndTs - Date.now()) / 1000));
+  document.getElementById('switch-num').textContent = rem;
+  if (rem !== switchLastTick) { switchLastTick = rem; if (rem > 0) playTick(); }
+  if (rem <= 0) {
+    clearInterval(switchTimer); switchTimer = null;
+    document.getElementById('switch-area').style.display = 'none';
+    exSide = 2;
+    updateSideLabel();
+    startExerciseTimer(timedDuration(state.workout.exIdx, state.workout.setIdx));
+  }
 }
 
 // ═══════════════════════
@@ -2112,9 +2347,33 @@ function startTimedSet() {
 window.addEventListener('popstate', () => {
   if (state.workout.active) {
     history.pushState({workout:true}, ''); // re-arm the trap
-    openSessionSwap();
+    openLineup(); // v4.8: back = "let me look at the day", not "swap this exercise"
   }
 });
+
+// v4.8: read-only view of the day's exercises + progress, without leaving the session
+function openLineup() {
+  const w = state.workout;
+  const el = document.getElementById('lineup-list');
+  if (!el) return;
+  el.innerHTML = state.todayEx.map((ex, i) => {
+    const done = (w.setsCompleted[i] || []).filter(Boolean).length;
+    const logged = (w.setLoggedReps[i] || []).filter(v => v !== null);
+    const detail = logged.length
+      ? logged.map(r => r + ex.unit).join(' · ')
+      : (ex.unit === 'sec' ? `3 × ${ex.reps}s` : `3 × ${ex.reps} reps`);
+    const isNow = i === w.exIdx;
+    return `<div class="ex-item" style="${isNow ? 'border-color:var(--orange);' : ''}">
+      <div class="ex-num" style="${isNow ? 'background:var(--orange);color:#0a0a0f;' : ''}">${i+1}</div>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}${isNow ? ' <span style="color:var(--orange);font-size:12px;">◀ NOW</span>' : ''}</div>
+        <div class="ex-det">${done}/3 sets · ${detail}</div>
+      </div>
+      <span class="grp-tag ${GRP[ex.group].cls}">${GRP[ex.group].label}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('lineup-modal').classList.add('visible');
+}
 function openSessionSwap() {
   const w = state.workout;
   const ex = state.todayEx[w.exIdx];
@@ -2366,6 +2625,16 @@ function submitEmail() {
 // ═══════════════════════
 load();
 checkEmailModal();
+// v4.8: if a live session was interrupted (back-out, reload, process kill), come back to it
+// instead of showing the location picker and re-rolling a brand new day.
+if (restoreSession()) {
+  applySettings();
+  renderHome();
+  showScreen('home');
+  document.getElementById('bottom-nav').style.display = 'flex';
+  navTo('home');
+  showToast('Session restored — pick up where you left off');
+}
 document.getElementById('version-loc').textContent = 'v' + APP_VERSION;
 document.getElementById('version-home').textContent = 'v' + APP_VERSION;
 document.getElementById('version-workout').textContent = 'v' + APP_VERSION;
@@ -2387,6 +2656,15 @@ document.getElementById('weight-input').addEventListener('keydown', e => {
 document.getElementById('edit-weight-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); saveEditSet(); }
 });
+// v4.9: typed duration / rep target — Enter commits and drops the keyboard, blur commits too
+document.getElementById('dur-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+document.getElementById('dur-input').addEventListener('blur', commitDurInput);
+document.getElementById('target-type-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+document.getElementById('target-type-input').addEventListener('blur', commitRepsInput);
 </script>
 <!-- EMAIL CAPTURE MODAL -->
 <div id="email-modal-overlay">
