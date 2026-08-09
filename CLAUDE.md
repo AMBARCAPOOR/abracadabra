@@ -1,8 +1,14 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_4_08_09_2026
-**Doc version:** 1.4 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_5_08_09_2026
+**Doc version:** 1.5 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.5** — §4 and §5 re-extracted from the code and dated. §4's side-classification
+lists were stale (dualSide 3 → 9, altSide 6 → 16) and are now generated, not hand-written; the
+14 `weighted` exercises are listed and all are `home:false`. §5 verified complete both ways: every
+key listed is referenced, and nothing referenced is missing. §9 gains a webhook drift check and a
+DB audit. §0.1 now scopes verification dates per-section instead of claiming one global date.
 
 **Changes in 1.4** — webhook 1.2 deployed and verified live; `webhook/webhook.gs` synced to it.
 §7's redeploy instructions were **wrong** and are corrected: "New deployment" changes the URL, so
@@ -40,9 +46,9 @@ These override convenience. They exist because all three have been violated befo
 
 1. **Verify before asserting.** Never state the contents, structure, or state of a file, sheet,
    or cell without reading it in the current session. A summary, a memory, or this document is
-   not a reading. The app-state claims here were verified on 08_08_2026 and drift from that
-   moment onward. Version 1.1 carried forward notes from an older file; it re-verified nothing
-   against the code.
+   not a reading. Verification dates in this document are per-section, not global: §4 and §5 were
+   re-extracted from the code on 08_09_2026 and §7 was verified against the live deployment the
+   same day. Anything not carrying a date still traces to 08_08_2026 and drifts from there.
 2. **Verification does not inherit.** Reading a file's constants does not verify what it computes
    at runtime. Each claim carries its own evidence.
 3. **No causal claims without the falsifying check.** Before saying "X broke because of Y," state
@@ -148,13 +154,28 @@ Exercises live in the `DB` constant, keyed by muscle group (`upper`, `lower`, `o
 | `dualSide` | Optional. All reps or the full hold on one side, then switch. |
 | `altSide` | Optional. Both sides alternate within the set. Label only, no behaviour change. |
 
-### Side classification — cross-checked against coaching sources, 08_08_2026
-- **`dualSide: true`** — Side Plank, Pallof Press, Woodchopper.
-- **`altSide: true`** — Russian Twist, Weighted Russian Twist, Bicycle Crunches, Dead Bug,
-  Bird Dog, Oblique Crunches.
+### Side classification — extracted from the DB and verified 08_09_2026
+Do not hand-maintain these lists. Re-extract them with the §9 DB audit; they were wrong within a
+day of being written last time.
+
+- **`dualSide: true` (9)** — Side Plank, Side Plank Hip Dip, Side Plank Reach-Through, Pallof
+  Press, Woodchopper, Dumbbell Side Bend, Single-Leg Glute Bridge, Suitcase Carry, Cable
+  Anti-Rotation Hold.
+- **`altSide: true` (16)** — Oblique Crunches, Russian Twist, Weighted Russian Twist, Bicycle
+  Crunches, Heel Taps, Lying Windshield Wipers, Cross-Body Mountain Climbers, Landmine Twist,
+  Hanging Oblique Knee Raise, Single-Leg Lowers, Dead Bug, Bird Dog, Plank Shoulder Taps, Plank
+  Up-Down, Swimmers. (Bird Dog is listed in both `core` and `posterior`, so it counts twice.)
+- **`weighted: true` (14)** — Weighted Crunches, Medicine Ball Crunches, Cable Crunch, Weighted
+  Sit-Up, Machine Crunch, Weighted Russian Twist, Woodchopper, Landmine Twist, Dumbbell Side
+  Bend, Pallof Press, Suitcase Carry, Cable Anti-Rotation Hold, Back Extension, Good Morning.
+  **Every one is `home:false`** — see the bodyweight-only rule in §3.
+- **No entry carries both `dualSide` and `altSide`**; they are mutually exclusive and the §9 audit
+  fails if that is ever violated.
 - Oblique Crunches is the one genuinely ambiguous case: standard form alternates, but some
   programs run a full set per side. It is currently flagged `altSide`. If the owner asks to
   change it, it moves to `dualSide` — do not change it unilaterally.
+- Field names, `unit` values (`reps`, `sec`) and `sets` (always `3`) in the table above were
+  extracted from the DB on 08_09_2026 and match.
 
 ### Dual-side timed flow
 For a `dualSide` exercise with `unit: 'sec'`: prestart countdown, side 1 hold, then a
@@ -167,7 +188,9 @@ because they are self-paced.
 
 ## 5. Persistence — every `localStorage` key
 
-Read these from the file before relying on them; they are enumerated here as a map, not as truth.
+**Extracted from the code and verified complete on 08_09_2026** — every key below is referenced
+in `index.html`, and no key is referenced that is not listed. Re-run the §9 extractor rather than
+trusting this table after any change.
 
 | Key | Holds |
 |---|---|
@@ -348,9 +371,32 @@ print('MISSING HANDLERS:', sorted(h for h in handlers if h not in funcs))
 Known benign result: handlers built inside dynamic template strings via `.replace()` can produce
 false "missing handler" hits. Confirm each hit by reading the code before treating it as a bug.
 
+**Webhook drift check** — `webhook/webhook.gs` is a hand-copied reference and nothing enforces
+that it matches the live script. It silently drifted from 1.1 to 1.2 inside a single day. This
+compares the copy against what is actually deployed:
+
+```bash
+LIVE=$(curl -s -L "https://script.google.com/macros/s/AKfycbwnuTbLddeBFIErLapHC5-NMFb6b4H1dQYq0h1S53b2fBvGt1uJiZ95LeYZ7gL-LWPn/exec" \
+  | grep -o '"webhookVersion":"[^"]*"' | cut -d'"' -f4)
+COPY=$(grep -o "WEBHOOK_VERSION = '[^']*'" webhook/webhook.gs | head -1 | cut -d"'" -f2)
+echo "live=$LIVE copy=$COPY"; [ "$LIVE" = "$COPY" ] && echo MATCH || echo "DRIFT — resync the copy"
+```
+
+This only compares version numbers, not the code — a live edit without a `WEBHOOK_VERSION` bump
+will still slip through. That is the strongest check available without `clasp`, and it is the
+reason the bump rule matters.
+
+**DB audit** — run after any change to the exercise catalogue. Checks pool sizes per location,
+duplicate names within a group, weighted-at-home violations, `dualSide`+`altSide` conflicts, and
+`sets:3`. Regenerates the §4 lists so they are never hand-maintained. See the script pattern in
+§4; the essential assertions are: no group's home pool below 6, no weighted exercise flagged
+`home:true`, no name repeated inside one group.
+
 For logic changes to the timer or session flow, write a throwaway Node harness that stubs
 `document` and `localStorage` and prints the actual sequence of events. Paste the output as proof.
-Do not report a timer change as working on the strength of reading it.
+Do not report a timer change as working on the strength of reading it. The v5.0 quit-logging
+harness extracted `logQuitSilently` from the shipped file and asserted the payload, including that
+a sub-minute bail logs `0` rather than being rounded up — that is the template to copy.
 
 ---
 
@@ -402,4 +448,4 @@ Do not report a timer change as working on the strength of reading it.
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_4_08_09_2026 — describes app version 5.0 (unreleased)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_5_08_09_2026 — describes app version 5.0 (unreleased)**
