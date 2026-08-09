@@ -13,6 +13,9 @@
        Russian Twist (need a weight). Home now has no weighted exercises at all.
        Smallest home pool is 2 (upper, posterior); pickEx() falls back rather than
        failing, and swap still offers at least one alternative.
+    3. 34 NEW EXERCISES — 22 bodyweight (gym + home) and 12 equipment (gym only).
+       Home goes 16 -> 38, gym 34 -> 68. Smallest home pool is now 6 (posterior),
+       up from 2, so the 7-day no-repeat filter has room to actually work.
   Carried over from v4.9:
     1. APP ICON — the v4.7 manifest icon decoded to malformed SVG and drew nothing.
        Rebuilt as PNG: AB wordmark, orange A / blue B, 192 + 512 + padded maskable 512.
@@ -807,6 +810,14 @@ const DB = {
     {name:'Bodyweight Crunches',sets:3,reps:25,unit:'reps',tip:'Exhale hard at top. Short range of motion is fine — the squeeze counts.',gym:true,home:true},
     {name:'Ab Wheel Rollout',sets:3,reps:10,unit:'reps',tip:'Brace like you\'re about to be punched. Don\'t let hips sag.',gym:true,home:false},
     {name:'Cable Crunch',sets:3,reps:15,unit:'reps',tip:'Pull with abs, not arms. Elbows fixed. Round the spine.',gym:true,home:false,weighted:true},
+    {name:'V-Up',sets:3,reps:12,unit:'reps',tip:'Legs and hands meet over your hips. Lower back stays glued down.',gym:true,home:true},
+    {name:'Sit-Up',sets:3,reps:20,unit:'reps',tip:'Full range, feet unanchored if you can. Hands at temples, never behind the neck.',gym:true,home:true},
+    {name:'Toe Touch Crunch',sets:3,reps:20,unit:'reps',tip:'Legs straight up. Reach past your toes and squeeze hard at the top.',gym:true,home:true},
+    {name:'Butterfly Sit-Up',sets:3,reps:15,unit:'reps',tip:'Soles together, knees wide. Takes the hip flexors out — pure abs.',gym:true,home:true},
+    {name:'Crunch Pulse',sets:3,reps:30,unit:'reps',tip:'Top half of the crunch only. Never fully release — stay in the burn.',gym:true,home:true},
+    {name:'Weighted Sit-Up',sets:3,reps:15,unit:'reps',tip:'Plate on the chest. Control the way down, don\'t drop into it.',gym:true,home:false,weighted:true},
+    {name:'Machine Crunch',sets:3,reps:15,unit:'reps',tip:'Set the seat so the pad sits on your chest. Curl the ribs to the hips.',gym:true,home:false,weighted:true},
+    {name:'Swiss Ball Jackknife',sets:3,reps:12,unit:'reps',tip:'Plank with shins on the ball. Roll knees in, hips stay level.',gym:true,home:false},
   ],
   lower:[
     {name:'Hanging Leg Raise',sets:3,reps:12,unit:'reps',tip:'No swinging. Posterior tilt at the top = full contraction.',gym:true,home:false},
@@ -818,6 +829,12 @@ const DB = {
     {name:'Toes to Bar',sets:3,reps:8,unit:'reps',tip:'Advanced. Full hollow body position. Touch bar with control.',gym:true,home:false},
     {name:'Flutter Kicks',sets:3,reps:40,unit:'sec',tip:'Tiny fast kicks, lower back flat. Hands under glutes if needed.',gym:true,home:true},
     {name:'Hollow Body Hold',sets:3,reps:30,unit:'sec',tip:'Arms and legs long as possible. Lower back stays down. Breathe.',gym:true,home:true},
+    {name:'Lying Leg Raise',sets:3,reps:15,unit:'reps',tip:'Hands under your glutes. Lower until the back wants to arch, then stop.',gym:true,home:true},
+    {name:'Seated Knee Tuck',sets:3,reps:15,unit:'reps',tip:'Sit, lean back on your hands, drive knees to chest. Feet never touch down.',gym:true,home:true},
+    {name:'Tuck Hold',sets:3,reps:30,unit:'sec',tip:'Knees tucked, shins parallel to the floor. Hold, don\'t rock.',gym:true,home:true},
+    {name:'Single-Leg Lowers',sets:3,reps:12,unit:'reps',tip:'Alternating. One leg lowers slowly, the other stays vertical.',gym:true,home:true,altSide:true},
+    {name:'Captain\'s Chair Knee Raise',sets:3,reps:15,unit:'reps',tip:'Press into the pads, no swinging. Curl the pelvis at the top.',gym:true,home:false},
+    {name:'Decline Reverse Crunch',sets:3,reps:12,unit:'reps',tip:'Grip behind your head. Roll the hips up the slope, don\'t just kick.',gym:true,home:false},
   ],
   oblique:[
     {name:'Oblique Crunches',sets:3,reps:16,unit:'reps',tip:'Alternating. Drive elbow toward opposite knee. Slow tempo.',gym:true,home:true,altSide:true},
@@ -828,6 +845,13 @@ const DB = {
     {name:'Side Plank',sets:3,reps:35,unit:'sec',tip:'Per side — hold one side, switch, hold the other. Drive hips up.',gym:true,home:true,dualSide:true},
     {name:'Woodchopper',sets:3,reps:12,unit:'reps',tip:'All reps one side, then switch. Rotate through core, not arms.',gym:true,home:false,weighted:true,dualSide:true},
     {name:'Bicycle Crunches',sets:3,reps:20,unit:'reps',tip:'Alternating. Slow it down. Full rotation — opposite elbow to knee.',gym:true,home:true,altSide:true},
+    {name:'Heel Taps',sets:3,reps:24,unit:'reps',tip:'Alternating. Crunch up slightly and tap the heel with your fingertips.',gym:true,home:true,altSide:true},
+    {name:'Side Plank Hip Dip',sets:3,reps:12,unit:'reps',tip:'All reps one side, then switch. Dip the hip low, drive it back up.',gym:true,home:true,dualSide:true},
+    {name:'Lying Windshield Wipers',sets:3,reps:12,unit:'reps',tip:'Alternating. Arms wide, knees together, rotate slow. Shoulders stay pinned.',gym:true,home:true,altSide:true},
+    {name:'Cross-Body Mountain Climbers',sets:3,reps:40,unit:'sec',tip:'Alternating. Drive the knee to the opposite elbow. Hips level.',gym:true,home:true,altSide:true},
+    {name:'Landmine Twist',sets:3,reps:16,unit:'reps',tip:'Alternating. Arms long, rotate from the trunk. Hips lead the bar.',gym:true,home:false,weighted:true,altSide:true},
+    {name:'Dumbbell Side Bend',sets:3,reps:15,unit:'reps',tip:'All reps one side, then switch. Weight one hand only. No leaning forward.',gym:true,home:false,weighted:true,dualSide:true},
+    {name:'Hanging Oblique Knee Raise',sets:3,reps:12,unit:'reps',tip:'Alternating. Drive knees up and across toward one armpit.',gym:true,home:false,altSide:true},
   ],
   core:[
     {name:'Plank',sets:3,reps:45,unit:'sec',tip:'Squeeze glutes, brace abs, neutral spine. Don\'t let hips drop or pike.',gym:true,home:true},
@@ -836,11 +860,24 @@ const DB = {
     {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Alternating. Extend opposite arm/leg. Don\'t rotate hips.',gym:true,home:true,altSide:true},
     {name:'Mountain Climbers',sets:3,reps:40,unit:'sec',tip:'Hips stay level throughout. Fast or slow both work.',gym:true,home:true},
     {name:'Hanging L-Sit Hold',sets:3,reps:25,unit:'sec',tip:'Legs parallel to floor, toes pointed. Every second is a win.',gym:true,home:false},
+    {name:'Plank Shoulder Taps',sets:3,reps:20,unit:'reps',tip:'Alternating. Tap the opposite shoulder. Hips must not rock — widen your feet.',gym:true,home:true,altSide:true},
+    {name:'Bear Crawl Hold',sets:3,reps:30,unit:'sec',tip:'Knees an inch off the floor, flat back. Breathe through it.',gym:true,home:true},
+    {name:'Plank Up-Down',sets:3,reps:12,unit:'reps',tip:'Alternating lead arm. Elbow to hand, hand to elbow. Keep the hips quiet.',gym:true,home:true,altSide:true},
+    {name:'Hollow Rock',sets:3,reps:20,unit:'reps',tip:'Hold the hollow shape and rock from it. The shape never changes.',gym:true,home:true},
+    {name:'Side Plank Reach-Through',sets:3,reps:12,unit:'reps',tip:'All reps one side, then switch. Thread the arm under, rotate back open.',gym:true,home:true,dualSide:true},
+    {name:'Suitcase Carry',sets:3,reps:40,unit:'sec',tip:'Full time one side, then switch. One heavy weight. Do not lean away from it.',gym:true,home:false,weighted:true,dualSide:true},
+    {name:'Cable Anti-Rotation Hold',sets:3,reps:25,unit:'sec',tip:'Full time one side, then switch. Arms locked out, refuse the pull.',gym:true,home:false,weighted:true,dualSide:true},
   ],
   posterior:[
     {name:'Back Extension',sets:3,reps:15,unit:'reps',tip:'Don\'t hyperextend at top. Squeeze glutes. Weight optional.',gym:true,home:false,weighted:true},
     {name:'Superman',sets:3,reps:40,unit:'sec',tip:'Hold position. Squeeze glutes and lower back. Chest off floor.',gym:true,home:true},
     {name:'Bird Dog',sets:3,reps:10,unit:'reps',tip:'Alternating. Control every inch. Pause at full extension.',gym:true,home:true,altSide:true},
+    {name:'Glute Bridge',sets:3,reps:20,unit:'reps',tip:'Drive through the heels, squeeze at the top. Ribs down, no arching.',gym:true,home:true},
+    {name:'Single-Leg Glute Bridge',sets:3,reps:12,unit:'reps',tip:'All reps one side, then switch. Hips stay square — don\'t let one drop.',gym:true,home:true,dualSide:true},
+    {name:'Reverse Snow Angel',sets:3,reps:15,unit:'reps',tip:'Face down, chest up. Sweep arms from overhead to hips, thumbs up.',gym:true,home:true},
+    {name:'Swimmers',sets:3,reps:30,unit:'sec',tip:'Alternating. Opposite arm and leg lift. Small, fast, controlled.',gym:true,home:true,altSide:true},
+    {name:'Good Morning',sets:3,reps:12,unit:'reps',tip:'Soft knees, hinge at the hips. Flat back throughout. Go light.',gym:true,home:false,weighted:true},
+    {name:'Reverse Hyperextension',sets:3,reps:15,unit:'reps',tip:'Chest supported. Lift legs with glutes, stop at parallel.',gym:true,home:false},
   ]
 };
 
