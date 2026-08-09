@@ -117,7 +117,7 @@ function updateMeta(ss) {
 // Set up once: in the Apps Script editor, click the clock icon (Triggers) on the
 // left sidebar → Add Trigger → function: pruneOldSessions → Time-driven →
 // Week timer → pick a day/time. Runs itself from then on, no further action needed.
-const RETENTION_DAYS = 90;
+const RETENTION_DAYS = 365;
 
 function pruneOldSessions() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SESSIONS_SHEET);

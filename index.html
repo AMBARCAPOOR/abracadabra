@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v4.9 — 08_08_2026
+  ABracadABra — v5.0 — 08_09_2026
   Changes in this revision:
+    1. QUIT LOGGING — exitWorkout() now calls logQuitSilently() before tearing down state,
+       sending type:'quit' with the exercise and set index at abandonment. Completed and
+       abandoned sessions can finally be told apart; previously a quit logged nothing at all.
+       REQUIRES the webhook to have a 'quit' branch first — without it the payload falls
+       through to the USERS tab and pollutes the email list. Do not ship these out of order.
+       Deliberate Quit only; a tab close or process kill still logs nothing.
+  Carried over from v4.9:
     1. APP ICON — the v4.7 manifest icon decoded to malformed SVG and drew nothing.
        Rebuilt as PNG: AB wordmark, orange A / blue B, 192 + 512 + padded maskable 512.
     2. CUSTOM VALUES — tap the big duration or rep-target number to type an exact value.
@@ -780,7 +787,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -1587,6 +1594,7 @@ function exitWorkout() {
     clearTimers(); clearInterval(restTimer);
     document.getElementById('rest-overlay').classList.remove('visible');
     updateRestPill(false); // CHANGE 4
+    logQuitSilently(); // BACKLOG 1: must run before the state below is torn down
     state.workout.active = false;
     releaseWakeLock(); // FEATURE 4
     clearSession(); // v4.8: deliberate quit — drop the saved session
@@ -2549,6 +2557,43 @@ function logSessionSilently(entry) {
         durationMin: entry.durationMin,
         totalSets: entry.totalSets,
         exercises: entry.exercises,
+        userAgent: navigator.userAgent.substring(0, 80),
+      }),
+      headers: { 'Content-Type': 'text/plain' }
+    }).catch(() => {}); // fire-and-forget — never blocks or surfaces errors to the user
+  } catch(e) {}
+}
+
+// BACKLOG 1: abandonment logging. Mirrors logSessionSilently but fires from exitWorkout(), so
+// completed and abandoned sessions can be told apart. Without this, a user who bails after one
+// set is invisible and the completion rate reads as 100%.
+// LIMITATION: deliberate Quit only. A tab close or an Android process kill cannot be caught
+// reliably and stays silent — see the resume path in restoreSession().
+function logQuitSilently() {
+  try {
+    const w = state.workout;
+    if (!w || !w.active) return; // nothing in flight — nothing to report
+    const elapsed = Math.round((Date.now() - w.startTime) / 60000);
+    const totalSets = w.setsCompleted.flat().filter(Boolean).length;
+    const cur = state.todayEx[w.exIdx];
+    fetch(EMAIL_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'quit',
+        deviceId: getDeviceId(),
+        appVersion: APP_VERSION,
+        location: state.location,
+        durationMin: elapsed, // true value, not clamped to 1 — a sub-minute bail logs 0, which is the signal
+        totalSets,
+        quitExIdx: w.exIdx,   // 0-based: which exercise they were on
+        quitExName: cur ? cur.name : '',
+        quitSetIdx: w.setIdx, // 0-based: which set within that exercise
+        totalEx: state.todayEx.length,
+        exercises: state.todayEx.map((ex, i) => ({
+          name: ex.name, group: ex.group, targetReps: ex.reps, unit: ex.unit,
+          setsCompleted: w.setsCompleted[i].filter(Boolean).length,
+          loggedReps: w.setLoggedReps[i],
+        })),
         userAgent: navigator.userAgent.substring(0, 80),
       }),
       headers: { 'Content-Type': 'text/plain' }
