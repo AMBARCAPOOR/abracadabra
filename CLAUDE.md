@@ -1,8 +1,12 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_6_08_09_2026
-**Doc version:** 1.6 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_7_08_09_2026
+**Doc version:** 1.7 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (live)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.7** — v5.0 deployed and verified live, so §3 and §11 item 1 no longer describe it
+as unreleased. Records that the quit path is proven as far as the webhook but not yet from a real
+device.
 
 **Changes in 1.6** — §11 item 3 corrected and deferred. GoatCounter was recorded as the route to
 Day-1/Day-7 retention; it cannot do retention at all, being cookieless by design. Retention is
@@ -103,7 +107,7 @@ A single-file abs workout tracker, shipped as an installable PWA.
 
 ---
 
-## 3. Current status — v4.9 live, v5.0 committed but not deployed
+## 3. Current status — v5.0 live
 
 Verify the version before trusting this section: it is the `APP_VERSION` constant in the file,
 and it appears in three places that must always agree — the HTML comment at the head of the file,
@@ -127,7 +131,7 @@ the `APP_VERSION` constant, and the delivery filename.
   unchanged. Clamps: 5–900 seconds, 1–999 reps.
 - **Dual-side sets.** See §4.
 
-### v5.0 — committed locally 08_09_2026, NOT deployed
+### Shipped in v5.0 — deployed and verified live 08_09_2026
 - **Quit logging.** `exitWorkout()` calls `logQuitSilently()` before tearing down state, sending
   `type: 'quit'` with `quitExIdx`, `quitExName`, `quitSetIdx` and `totalEx`. Additive —
   `finishWorkout()` untouched. Duration is **not** clamped to a 1-minute floor the way the
@@ -433,9 +437,11 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 - Fixed-start exercises are adjustable before completion, not only after.
 
 ### Open
-1. **Quit logging — webhook done, app committed but unreleased.** Webhook 1.2 with the QUITS
-   branch is deployed and verified live (08_09_2026). The app side is committed locally at v5.0
-   and has **not** been pushed. Remaining: ship v5.0, then confirm a real quit lands in QUITS.
+1. **Quit logging — shipped 08_09_2026, one check outstanding.** Webhook 1.2 with the QUITS
+   branch is live; app v5.0 is deployed and byte-verified. A synthetic quit was accepted
+   (`{"status":"ok"}`) with all-zero indices, the case `||` would have blanked. **Not yet
+   confirmed: a real quit from a real phone landing in QUITS.** Until someone checks that, the
+   end-to-end path is proven only up to the webhook, not from the device.
    Still genuinely open underneath it: a tab close or Android process kill logs nothing, so
    "abandoned" undercounts. Catching those needs `visibilitychange`/`beforeunload` plus
    deduplication against the resume path, which is a bigger job than it sounds.
@@ -465,4 +471,4 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_6_08_09_2026 — describes app version 5.0 (unreleased)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_7_08_09_2026 — describes app version 5.0 (live)**
