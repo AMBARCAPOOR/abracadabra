@@ -1,8 +1,14 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_2_08_09_2026
-**Doc version:** 1.2 · **Date:** 08_09_2026 · **Describes app version:** 4.9
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_3_08_09_2026
+**Doc version:** 1.3 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (unreleased)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.3** — §7 corrected and expanded. The 1.2 claim that the script is not named
+"abracadabra" was **wrong**: it is `ABracadABra Webhookv1.1_07_21_2026`, and the real obstacle is
+that it lives under the secondary Google account. Added the verified pruning-trigger state, the
+Head-vs-deployment rule, and the Sheets version-coercion gotcha. Describes app version 5.0, which
+is committed locally but **not deployed** — see §11 item 1.
 
 **Changes in 1.2** — §7 rewritten. A redacted reference copy of the webhook now lives at
 `webhook/webhook.gs` (`WEBHOOK_VERSION` 1.1, captured 08_09_2026). Added the rule that `SHEET_ID`
@@ -203,10 +209,22 @@ and both target-adjust paths.
 - **`SHEET_ID` is redacted in `webhook/webhook.gs`, and must stay that way.** This repo is
   public, and that ID points at a sheet holding user emails and session records. Never commit the
   real value. The same applies to any future dump of this script.
-- **Finding the live script.** It is not named "abracadabra" and will not turn up by searching
-  that word. Open the logging Google Sheet, then **Extensions → Apps Script**. Note that it is
-  owned by the Google account that owns the sheet, which is not necessarily the primary account —
-  if `script.google.com` looks empty, check the other account before concluding it is gone.
+- **Finding the live script.** The project is named `ABracadABra Webhookv1.1_07_21_2026`. It is
+  owned by the **secondary Google account**, not the primary one — that is the whole reason it
+  looks missing from `script.google.com`. Fastest route regardless of account: open the logging
+  Google Sheet, then **Extensions → Apps Script**.
+- **Pruning trigger — verified armed 08_09_2026.** One time-driven trigger: function
+  `pruneOldSessions`, deployment Head, monthly on the 1st between 00:00 and 01:00 (GMT-7).
+  **The trigger calls that function by name — renaming `pruneOldSessions` silently breaks it.**
+- **`RETENTION_DAYS` raised 90 → 365 in Head on 08_09_2026 with no `WEBHOOK_VERSION` bump.** That
+  is defensible here, and the reason is worth internalising: **triggers run Head, the web app
+  runs the deployment.** `RETENTION_DAYS` is read only by `pruneOldSessions`, which only the
+  trigger calls, so the change took effect immediately and the deployed web app is still
+  genuinely 1.1. Any edit touching `doPost`/`doGet` is the opposite case — it does nothing until
+  you bump the version and create a new deployment.
+- **Sheets coerces version strings to numbers.** `'4.0'` logged as `4` for the whole 4.x line.
+  SESSIONS columns B and D were set to plain text by hand on 08_09_2026; any new tab carrying a
+  version column must do the same via `setNumberFormat('@')` at creation.
   Read the current script before changing it — as of 08_08_2026 it handles `type: 'session'`
   into a SESSIONS tab, and routes everything else into a USERS tab. There is no `'quit'` branch
   yet. A META tab records which script version last served a request.
@@ -340,4 +358,4 @@ Do not report a timer change as working on the strength of reading it.
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_2_08_09_2026 — describes app version 4.9**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_3_08_09_2026 — describes app version 5.0 (unreleased)**
