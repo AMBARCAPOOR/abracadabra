@@ -1,8 +1,13 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_7_08_09_2026
-**Doc version:** 1.7 · **Date:** 08_09_2026 · **Describes app version:** 5.0 (live)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_8_08_09_2026
+**Doc version:** 1.8 · **Date:** 08_09_2026 · **Describes app version:** 5.1 (live)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.8** — documents `DESC`, which §4 never mentioned at all. That omission is why v5.0
+shipped 34 exercises whose info panel read "No description available." Adding an exercise requires
+editing **two** structures and nothing enforces it, so §9 gains a DESC coverage check. v5.1 fills
+all 34.
 
 **Changes in 1.7** — v5.0 deployed and verified live, so §3 and §11 item 1 no longer describe it
 as unreleased. Records that the quit path is proven as far as the webhook but not yet from a real
@@ -107,7 +112,7 @@ A single-file abs workout tracker, shipped as an installable PWA.
 
 ---
 
-## 3. Current status — v5.0 live
+## 3. Current status — v5.1 live
 
 Verify the version before trusting this section: it is the `APP_VERSION` constant in the file,
 and it appears in three places that must always agree — the HTML comment at the head of the file,
@@ -162,6 +167,17 @@ Exercises live in the `DB` constant, keyed by muscle group (`upper`, `lower`, `o
 | `weighted` | Optional. Enables weight capture. Record-and-display only — no PB logic, no progression logic on weight. |
 | `dualSide` | Optional. All reps or the full hold on one side, then switch. |
 | `altSide` | Optional. Both sides alternate within the set. Label only, no behaviour change. |
+
+### `DESC` — the second half of an exercise, and easy to miss
+**Adding an exercise means editing two structures, not one.** `DB` holds the mechanics plus the
+one-line `tip` shown during the set. A separate `const DESC` object, keyed by the exact same
+name string, holds the longer plain-English explanation shown in the info panel.
+
+Nothing links them. `DESC[name] || 'No description available.'` means a missing key degrades
+silently — no error, no crash, just placeholder text in the UI. v5.0 shipped 34 exercises with no
+`DESC` entries and it was caught by the owner, not by any check. **§9 now has a coverage check;
+run it after any DB change.** Keys must match the DB name character for character, apostrophes
+included (`'Captain\'s Chair Knee Raise'`).
 
 ### Side classification — extracted from the DB and verified 08_09_2026
 Do not hand-maintain these lists. Re-extract them with the §9 DB audit; they were wrong within a
@@ -395,6 +411,25 @@ This only compares version numbers, not the code — a live edit without a `WEBH
 will still slip through. That is the strongest check available without `clasp`, and it is the
 reason the bump rule matters.
 
+**DESC coverage check** — run after ANY change to the exercise catalogue. Every `DB` name needs a
+`DESC` key or the info panel silently shows placeholder text:
+
+```bash
+python3 -c "
+import re
+s = open('index.html', encoding='utf-8').read()
+dbs = s.index('const DB = {');  db   = s[dbs:s.index(chr(10)+'};', dbs)]
+ds  = s.index('const DESC = {'); desc = s[ds:s.index(chr(10)+'};', ds)]
+names = set(m.replace(chr(92)+chr(39), chr(39)) for m in re.findall(r\"name:'((?:[^'\\\\\\\\]|\\\\\\\\.)*)'\", db))
+keys  = set(m.replace(chr(92)+chr(39), chr(39)) for m in re.findall(r\"^\s*'((?:[^'\\\\\\\\]|\\\\\\\\.)*)'\s*:\", desc, re.M))
+print('MISSING DESC:', sorted(names - keys) or 'none')
+print('ORPHAN DESC :', sorted(keys - names) or 'none')
+"
+```
+
+Both lists must be empty. Orphans matter too — they mean a renamed exercise left its description
+stranded, so the new name silently falls back to placeholder text.
+
 **DB audit** — run after any change to the exercise catalogue. Checks pool sizes per location,
 duplicate names within a group, weighted-at-home violations, `dualSide`+`altSide` conflicts, and
 `sets:3`. Regenerates the §4 lists so they are never hand-maintained. See the script pattern in
@@ -471,4 +506,4 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_7_08_09_2026 — describes app version 5.0 (live)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_8_08_09_2026 — describes app version 5.1 (live)**

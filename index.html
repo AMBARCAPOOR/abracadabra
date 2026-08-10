@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.0 — 08_09_2026
+  ABracadABra — v5.1 — 08_09_2026
   Changes in this revision:
+    1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
+       info panel showed 'No description available.' for every one of them. DESC is a separate
+       name-keyed map and nothing enforced that the two stay in step. Now 67/67, and §9 has a
+       coverage check so this cannot ship silently again.
+  Carried over from v5.0:
     1. QUIT LOGGING — exitWorkout() now calls logQuitSilently() before tearing down state,
        sending type:'quit' with the exercise and set index at abandonment. Completed and
        abandoned sessions can finally be told apart; previously a quit logged nothing at all.
@@ -795,7 +800,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -885,6 +890,42 @@ const DB = {
 // EXERCISE DESCRIPTIONS (FEATURE 1 — ELI5, offline)
 // ═══════════════════════
 const DESC = {
+  // v5.0 additions. Every DB entry must have a key here or the info panel falls back to
+  // 'No description available.' — see the §9 DESC coverage check.
+  'V-Up':"Lie flat, then fold up like a jackknife so your hands and feet meet over your hips. Everything moves at once, so the whole front of your abs fires together.",
+  'Sit-Up':"The classic — all the way up until your chest is near your knees, then lower under control. Keep hands at your temples, never pulling on your neck.",
+  'Toe Touch Crunch':"Legs pointed straight at the ceiling, reach up and try to touch your toes. Short range, but the squeeze at the top is where the work is.",
+  'Butterfly Sit-Up':"Sit-up with the soles of your feet together and knees dropped wide. That position stops your hip flexors helping, so your abs do everything.",
+  'Crunch Pulse':"Crunch up halfway and stay there, pulsing in the top half of the movement. You never relax, so the burn builds fast.",
+  'Weighted Sit-Up':"A normal sit-up holding a plate against your chest. Same movement, more resistance — lower slowly rather than dropping back.",
+  'Machine Crunch':"Set the seat so the pad rests on your chest, then curl your ribs toward your hips. The machine keeps the path fixed so you can focus on squeezing.",
+  'Swiss Ball Jackknife':"Get into a push-up position with your shins on an exercise ball, then roll your knees in toward your chest. Keeping your hips from sagging is half the exercise.",
+  'Lying Leg Raise':"Flat on your back, hands tucked under your glutes, raise straight legs then lower them slow. Stop lowering the moment your back starts to arch.",
+  'Seated Knee Tuck':"Sit on the floor leaning back on your hands, then drive your knees to your chest and extend back out. Your feet never touch the floor between reps.",
+  'Tuck Hold':"Sit balanced with knees tucked and shins level with the floor, and just hold. Simple to describe, brutal to hold still.",
+  'Single-Leg Lowers':"On your back with both legs up, lower one leg toward the floor while the other stays pointed at the ceiling. Alternate — the still leg is what makes it hard.",
+  'Captain\'s Chair Knee Raise':"In the padded arm station, press down through your forearms and drive your knees up. No swinging — curl your hips at the top.",
+  'Decline Reverse Crunch':"Head-up on a decline bench, grip behind your head and roll your hips up the slope. Rolling, not kicking, is what hits the lower abs.",
+  'Heel Taps':"Lie down with knees bent, crunch up slightly and reach side to side tapping each heel. Stay off the floor the whole set to keep the obliques loaded.",
+  'Side Plank Hip Dip':"Hold a side plank, then lower your hip toward the floor and drive it back up. All reps one side before switching.",
+  'Lying Windshield Wipers':"On your back, arms out wide, knees together and bent — rotate them side to side like wipers. Keep both shoulders pinned to the floor.",
+  'Cross-Body Mountain Climbers':"Push-up position, driving each knee toward the opposite elbow. The diagonal is what turns it into an oblique exercise.",
+  'Landmine Twist':"With one end of a barbell anchored, hold the other end and sweep it side to side in an arc. Rotate through your trunk and let your hips lead.",
+  'Dumbbell Side Bend':"Stand holding a weight in one hand only and bend sideways toward it, then pull back upright. The unweighted side does the work.",
+  'Hanging Oblique Knee Raise':"Hang from a bar and drive your knees up and off to one side, alternating. Aiming toward one armpit is what brings the obliques in.",
+  'Plank Shoulder Taps':"Hold a high plank and tap the opposite shoulder with each hand in turn. Your hips trying to rock is the thing you're fighting — widen your feet if needed.",
+  'Bear Crawl Hold':"On hands and toes with knees hovering an inch off the floor, back flat. You aren't moving, just refusing to let your knees drop.",
+  'Plank Up-Down':"Move from forearm plank up to a high plank one arm at a time, then back down. Keep your hips as still as you can throughout.",
+  'Hollow Rock':"Hold the hollow body shape — lower back pressed down, arms and legs long — then rock gently back and forth. The shape must never change.",
+  'Side Plank Reach-Through':"In a side plank, thread your top arm under your body, then rotate back open. All reps one side, then switch.",
+  'Suitcase Carry':"Walk holding one heavy weight at your side like a suitcase. Staying perfectly upright instead of leaning is the entire point.",
+  'Cable Anti-Rotation Hold':"Stand side-on to a cable, press the handle straight out from your chest and hold. The cable tries to twist you and you refuse.",
+  'Glute Bridge':"On your back, knees bent, drive through your heels to lift your hips into a straight line. Squeeze hard at the top and keep your ribs down.",
+  'Single-Leg Glute Bridge':"Same as a glute bridge but one foot off the floor. All reps one side, then switch — keep both hips level the whole time.",
+  'Reverse Snow Angel':"Face down, chest lifted, sweep your arms from overhead down to your hips and back, thumbs up. Small movement, works the whole upper back.",
+  'Swimmers':"Face down, lifting opposite arm and leg in a quick alternating flutter. Stay low and controlled rather than throwing your limbs.",
+  'Good Morning':"With a light bar on your back and soft knees, hinge forward at the hips and stand back up. Back stays flat — go much lighter than you think.",
+  'Reverse Hyperextension':"Chest supported on a bench with legs hanging, lift your legs up using your glutes. Stop at parallel rather than arching past it.",
   'Weighted Crunches':"Lie on your back holding a weight on your chest. Curl your shoulders up toward your knees, then lower slow. The weight makes your abs work harder.",
   'Overhead Sit-Up':"Full sit-up with arms locked straight above your head the whole time. Keeping arms overhead forces your abs to do all the lifting.",
   'Medicine Ball Crunches':"Crunch up holding a med ball. If there's a wall, throw the ball at the top and catch it — that explosive part fires the abs hard.",
