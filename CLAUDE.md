@@ -1,8 +1,14 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_8_08_09_2026
-**Doc version:** 1.8 · **Date:** 08_09_2026 · **Describes app version:** 5.1 (live)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_9_08_09_2026
+**Doc version:** 1.9 · **Date:** 08_09_2026 · **Describes app version:** 5.1 (live)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 1.9** — §9 replaced with a committed script, `tools/verify.py`. The inline one-liners
+it used to carry ran `python3` and wrote to `/tmp/`, neither of which exists on the owner's Windows
+machine — so the documented harness had never been runnable as written, inside the very section
+meant to enforce verification. The script adds DESC coverage, version agreement, home-pool floor
+and webhook drift to the original syntax and reference checks, and was negative-tested.
 
 **Changes in 1.8** — documents `DESC`, which §4 never mentioned at all. That omission is why v5.0
 shipped 34 exercises whose info panel read "No description available." Adding an exercise requires
@@ -362,79 +368,42 @@ rename it to `index.html` before committing. GitHub Pages serves `index.html` an
 
 ## 9. Verification harness
 
-Run both before every commit. Neither needs a browser.
-
-**Syntax check** — extract the first `<script>` block and check it:
+**One command, before every commit:**
 
 ```bash
-python3 -c "
-import re
-s = open('index.html', encoding='utf-8').read()
-js = re.findall(r'<script>(.*?)</script>', s, re.S)[0]
-open('/tmp/s.js', 'w', encoding='utf-8').write(js)
-"
-node --check /tmp/s.js
+python tools/verify.py
 ```
 
-**Reference check** — every `getElementById` target must exist as an `id`, and every inline
-handler must exist as a function:
+Add `--webhook` to also compare `webhook/webhook.gs` against the live deployment (needs internet).
+Exit code is 0 if everything passes, 1 otherwise, and every check prints PASS or FAIL with the
+detail needed to act on it.
 
-```bash
-python3 -c "
-import re
-s = open('index.html', encoding='utf-8').read()
-js = re.findall(r'<script>(.*?)</script>', s, re.S)[0]
-ids = set(re.findall(r'id=\"([^\"]+)\"', s))
-gets = set(re.findall(r\"getElementById\('([^']+)'\)\", js))
-print('MISSING IDS:', sorted(g for g in gets if g not in ids))
-funcs = set(re.findall(r'function\s+([A-Za-z0-9_]+)\s*\(', js))
-handlers = set(re.findall(r'on(?:click|change|input)=\"([A-Za-z0-9_]+)\(', s))
-print('MISSING HANDLERS:', sorted(h for h in handlers if h not in funcs))
-"
-```
+**Note `python`, not `python3`.** Until 08_09_2026 this section carried inline `python3 -c "..."`
+one-liners that wrote to `/tmp/`. Neither exists on the owner's Windows machine, so the documented
+harness had never actually been runnable as written — a §0.6 violation hiding in the section whose
+whole job is verification. The escaping needed to embed those regexes in a shell string also kept
+corrupting them. Hence a committed script.
 
-Known benign result: handlers built inside dynamic template strings via `.replace()` can produce
-false "missing handler" hits. Confirm each hit by reading the code before treating it as a bug.
+What it checks:
 
-**Webhook drift check** — `webhook/webhook.gs` is a hand-copied reference and nothing enforces
-that it matches the live script. It silently drifted from 1.1 to 1.2 inside a single day. This
-compares the copy against what is actually deployed:
+| Check | Catches |
+|---|---|
+| Syntax | the extracted `<script>` block failing `node --check` |
+| References | `getElementById` targets with no matching `id`; inline handlers with no function |
+| Version agreement | the head comment and `APP_VERSION` disagreeing |
+| DESC coverage | a DB exercise with no description, **and** orphan keys from a rename |
+| Exercise DB | duplicate names in a group, weighted-at-home, `dualSide`+`altSide`, `sets` ≠ 3 |
+| Home pools | any home group below 6, where the 7-day filter starts serving repeats |
+| Webhook drift | `webhook/webhook.gs` out of step with the deployed `WEBHOOK_VERSION` |
 
-```bash
-LIVE=$(curl -s -L "https://script.google.com/macros/s/AKfycbwnuTbLddeBFIErLapHC5-NMFb6b4H1dQYq0h1S53b2fBvGt1uJiZ95LeYZ7gL-LWPn/exec" \
-  | grep -o '"webhookVersion":"[^"]*"' | cut -d'"' -f4)
-COPY=$(grep -o "WEBHOOK_VERSION = '[^']*'" webhook/webhook.gs | head -1 | cut -d"'" -f2)
-echo "live=$LIVE copy=$COPY"; [ "$LIVE" = "$COPY" ] && echo MATCH || echo "DRIFT — resync the copy"
-```
+The harness was negative-tested on 08_09_2026: a removed DESC key, a weighted exercise flagged
+home, and a desynced version comment were all caught, exit 1. A check nobody has watched fail is
+not a check.
 
-This only compares version numbers, not the code — a live edit without a `WEBHOOK_VERSION` bump
-will still slip through. That is the strongest check available without `clasp`, and it is the
-reason the bump rule matters.
-
-**DESC coverage check** — run after ANY change to the exercise catalogue. Every `DB` name needs a
-`DESC` key or the info panel silently shows placeholder text:
-
-```bash
-python3 -c "
-import re
-s = open('index.html', encoding='utf-8').read()
-dbs = s.index('const DB = {');  db   = s[dbs:s.index(chr(10)+'};', dbs)]
-ds  = s.index('const DESC = {'); desc = s[ds:s.index(chr(10)+'};', ds)]
-names = set(m.replace(chr(92)+chr(39), chr(39)) for m in re.findall(r\"name:'((?:[^'\\\\\\\\]|\\\\\\\\.)*)'\", db))
-keys  = set(m.replace(chr(92)+chr(39), chr(39)) for m in re.findall(r\"^\s*'((?:[^'\\\\\\\\]|\\\\\\\\.)*)'\s*:\", desc, re.M))
-print('MISSING DESC:', sorted(names - keys) or 'none')
-print('ORPHAN DESC :', sorted(keys - names) or 'none')
-"
-```
-
-Both lists must be empty. Orphans matter too — they mean a renamed exercise left its description
-stranded, so the new name silently falls back to placeholder text.
-
-**DB audit** — run after any change to the exercise catalogue. Checks pool sizes per location,
-duplicate names within a group, weighted-at-home violations, `dualSide`+`altSide` conflicts, and
-`sets:3`. Regenerates the §4 lists so they are never hand-maintained. See the script pattern in
-§4; the essential assertions are: no group's home pool below 6, no weighted exercise flagged
-`home:true`, no name repeated inside one group.
+Two known limits. Handlers built inside template strings via `.replace()` can produce false
+"missing handler" hits — confirm by reading before treating one as a bug. And the webhook check
+compares version numbers only, so a live edit without a `WEBHOOK_VERSION` bump still slips
+through; that is why the bump rule matters.
 
 For logic changes to the timer or session flow, write a throwaway Node harness that stubs
 `document` and `localStorage` and prints the actual sequence of events. Paste the output as proof.
@@ -506,4 +475,4 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_8_08_09_2026 — describes app version 5.1 (live)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_9_08_09_2026 — describes app version 5.1 (live)**
