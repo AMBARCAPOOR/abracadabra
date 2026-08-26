@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.1 — 08_09_2026
+  ABracadABra — v5.2 — 08_26_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -405,7 +405,7 @@
 <body>
 <!-- LOCATION -->
 <div id="screen-location" class="screen active">
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:28px;padding:40px 24px;">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:28px;padding:72px 24px 40px;">
     <div>
       <div class="big-title"><span style="color:var(--orange)">AB</span>racad<span style="color:var(--blue)">AB</span>ra</div>
       <div class="version-tag" id="version-loc"></div>
@@ -480,7 +480,7 @@
   <div class="today-workout">
     <div class="workout-hdr">
       <div class="workout-lbl">Today's Workout</div>
-      <div class="loc-tag" id="loc-tag">📍 Gym</div>
+      <div class="loc-tag" id="loc-tag" onclick="changeLocation()" style="cursor:pointer;" title="Change location">📍 Gym ✎</div>
     </div>
     <div class="ex-list" id="today-ex-list"></div>
     <button class="start-btn" id="main-start-btn" onclick="startWorkout()">▶ START SESSION</button>
@@ -800,7 +800,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.1';
+const APP_VERSION = '5.2';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -1213,6 +1213,19 @@ function selectLocation(loc) {
   document.getElementById('bottom-nav').style.display = 'flex';
   showPreloadPrompt(); // FEATURE 2
 }
+function changeLocation() {
+  if (state.workout && state.workout.active) {
+    if (!confirm('Changing location will end your current session. Continue?')) return;
+    clearTimers(); clearInterval(restTimer);
+    document.getElementById('rest-overlay').classList.remove('visible');
+    updateRestPill(false);
+    state.workout.active = false;
+    releaseWakeLock();
+    try { localStorage.removeItem('abra_session'); } catch(e) {}
+  }
+  document.getElementById('bottom-nav').style.display = 'none';
+  showScreen('location');
+}
 function applySettings() {
   document.getElementById('rest-setting-display').textContent = settings.defaultRest + 's';
   document.getElementById('prestart-select').value = settings.prestartSec;
@@ -1230,7 +1243,7 @@ function renderHome() {
   document.getElementById('today-meta').textContent =
     now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) +
     ' · ' + (state.location === 'gym' ? '🏋️ Gym' : '🏠 Home');
-  document.getElementById('loc-tag').textContent = state.location === 'gym' ? '🏋️ Gym' : '🏠 Home';
+  document.getElementById('loc-tag').textContent = (state.location === 'gym' ? '🏋️ Gym' : '🏠 Home') + ' ✎';
   const totalSets = state.history.reduce((a,h) => a + (h.totalSets||0), 0);
   const str = calcStreak();
   document.getElementById('stat-total').textContent = state.history.length;
