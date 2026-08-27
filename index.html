@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.3 — 08_26_2026
+  ABracadABra — v5.4 — 08_26_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -39,7 +39,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0f">
@@ -57,7 +57,7 @@
     --font-d:'Barlow Condensed',sans-serif;--font-b:'Inter',sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;overflow-x:hidden;max-width:600px;margin:0 auto;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100dvh;overflow-x:hidden;width:100%;max-width:600px;margin:0 auto;}
   .screen{display:none;min-height:100vh;flex-direction:column;}
   .screen.active{display:flex;}
 
@@ -87,7 +87,7 @@
   .streak-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:600;color:var(--orange);}
 
   /* LOCATION */
-  #screen-location{justify-content:center;align-items:center;gap:24px;padding:40px 24px;}
+  #screen-location{justify-content:flex-start;align-items:center;gap:24px;padding:40px 24px;}
   .big-title{font-family:var(--font-d);font-size:44px;font-weight:900;text-align:center;line-height:1;letter-spacing:-1px;}
   .sub{color:var(--text-dim);text-align:center;font-size:15px;}
   .loc-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;}
@@ -800,7 +800,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.3';
+const APP_VERSION = '5.4';
 
 // ═══════════════════════
 // EXERCISE DATABASE
