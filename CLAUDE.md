@@ -1,8 +1,13 @@
 # ABracadABra — Claude Code Handoff
 
-**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v1_9_08_09_2026
-**Doc version:** 1.9 · **Date:** 08_09_2026 · **Describes app version:** 5.1 (live)
+**Document:** ABracadABra_CLAUDE_CODE_HANDOFF_v2_0_08_26_2026
+**Doc version:** 2.0 · **Date:** 08_26_2026 · **Describes app version:** 5.6 (live)
 **Save as:** `CLAUDE.md` at repo root (Claude Code reads that filename automatically)
+
+**Changes in 2.0** — §6 gains item 8: Chrome's per-site "Desktop site" toggle presents as a CSS
+layout bug that no deploy can fix, and the falsifying check for it is "can the user pinch-zoom?".
+Written after it cost three shipped versions of speculative CSS (5.3–5.5), all reverted in 5.6.
+§3 records v5.2's Change Location control and the 5.3–5.6 sequence.
 
 **Changes in 1.9** — §9 replaced with a committed script, `tools/verify.py`. The inline one-liners
 it used to carry ran `python3` and wrote to `/tmp/`, neither of which exists on the owner's Windows
@@ -118,7 +123,7 @@ A single-file abs workout tracker, shipped as an installable PWA.
 
 ---
 
-## 3. Current status — v5.1 live
+## 3. Current status — v5.6 live
 
 Verify the version before trusting this section: it is the `APP_VERSION` constant in the file,
 and it appears in three places that must always agree — the HTML comment at the head of the file,
@@ -154,6 +159,18 @@ the `APP_VERSION` constant, and the delivery filename.
   gym 34 → 68. This was a real defect, not a nice-to-have: home `upper` and `posterior` held only
   2 exercises each, so the 7-day no-repeat filter in `pickEx()` emptied the pool by day 3 and fell
   back to repeats. A 7-day streak saw the same two upper exercises over and over.
+
+### Shipped in v5.2–v5.6 — 08_26_2026
+- **Change Location.** The `📍 Gym ✎` / `🏠 Home ✎` tag in the Today's Workout header is tappable
+  and returns to the location screen. Before this there was no route back once a location was
+  picked — the only exit was Quit, which the owner had not found.
+  If a session is active the teardown runs through `exitWorkout()` rather than duplicating it:
+  that reuses the one sanctioned Quit `confirm()` (§2 permits exactly two app-wide) and keeps
+  `logQuitSilently()` on the path, so abandoning a session this way still reaches QUITS. The
+  first cut of this function did neither and would have silently undercounted abandonment.
+- **5.3, 5.4 and 5.5 were speculative CSS and are fully reverted.** The layout in 5.6 is identical
+  to v5.1. They chased a device setting — see §6 item 8, which exists because of them. Left in the
+  version history deliberately: the numbers are not reused and the reversal is the record.
 
 ---
 
@@ -266,6 +283,22 @@ and both target-adjust paths.
 7. **The service worker cache is version-keyed.** `CACHE = 'abracadabra-v${APP_VERSION}'`. If
    `APP_VERSION` is not bumped, the old code is served forever and the change appears not to have
    deployed. This is the single most common false "it didn't work" report.
+8. **A reported layout bug may not be in the file at all — check the device first.** Chrome's
+   per-site **"Desktop site"** toggle makes Chrome ignore the viewport meta tag entirely, lay the
+   page out at ~980px+ instead of `device-width`, and re-enable pinch-zoom. The result reads
+   exactly like a CSS defect: content shrunk into the middle of the screen with dead space around
+   it. It is per-site and per-device, survives hard refresh, cache clear and PWA reinstall, and
+   **no deploy can fix it** — which is precisely the tell.
+   **The falsifying check, before touching any CSS: can the user pinch-zoom?** The viewport tag
+   sets `user-scalable=no, maximum-scale=1.0`, so on a device honouring it pinch-zoom is dead. If
+   pinch-zoom works, the tag is being overridden and the cause is device-side, not in the file.
+   A second device rendering the same URL correctly confirms it.
+   Fix: Chrome → ⋮ → uncheck **Desktop site**; also check ⋮ → Settings → Site settings → Desktop
+   site for a saved entry. Related device-side causes worth ruling out in the same pass: Chrome →
+   Settings → Accessibility → **Force enable zoom**, and per-site **Zoom levels**.
+   **This cost three shipped versions (5.3, 5.4, 5.5) of speculative CSS that all had to be
+   reverted in 5.6.** It is the §0.3 rule in its natural habitat: the check that would have killed
+   the CSS hypothesis was one question, and it was not asked.
 
 ---
 
@@ -475,4 +508,4 @@ a sub-minute bail logs `0` rather than being rounded up — that is the template
 
 ---
 
-**End of ABracadABra_CLAUDE_CODE_HANDOFF_v1_9_08_09_2026 — describes app version 5.1 (live)**
+**End of ABracadABra_CLAUDE_CODE_HANDOFF_v2_0_08_26_2026 — describes app version 5.6 (live)**
