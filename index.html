@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.7 — 10_09_2026
+  ABracadABra — v5.8 — 10_09_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -387,12 +387,14 @@
   .trend-val.pb{color:#ffd24a;}
 
   /* EDIT 1 — DATA BACKUP */
-  .data-footer{margin:24px 20px 0;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;}
-  .data-footer-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);font-weight:600;margin-bottom:10px;}
-  .data-footer-btns{display:flex;gap:10px;}
-  .data-btn{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font-d);font-size:16px;font-weight:700;letter-spacing:.5px;cursor:pointer;}
+  /* v5.8: Export/Import sit in the History heading row. They were at the very bottom,
+     below every session card, so finding them meant scrolling the whole history. The
+     heading already spans a full row with dead space on the right, so this costs no
+     vertical space at all. */
+  .sec-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .data-btns{display:flex;gap:6px;flex-shrink:0;}
+  .data-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:none;padding:5px 10px;cursor:pointer;white-space:nowrap;}
   .data-btn:active{border-color:var(--orange);color:var(--orange);}
-  .data-footer-note{font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.4;}
   .import-textarea{width:100%;min-height:160px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;}
   .import-textarea:focus{border-color:var(--orange);}
 
@@ -623,18 +625,15 @@
     <a class="header-ideas" href="mailto:ambarecomail@gmail.com?subject=ABracadABra%20Idea%2FFeedback&body=Hey%20Guruji%2C%20here%27s%20my%20idea%3A%0A%0A">IDEAS?</a>
     <div class="streak-badge" id="streak-badge-hist">🔥 0 days</div>
   </div>
-  <div class="sec-title">Workout History</div>
-  <div id="hist-filter-wrap"></div>
-  <div id="hist-container"><div class="empty-hist">No workouts yet.<br>Complete your first session! 💪</div></div>
-  <!-- EDIT 1: DATA BACKUP -->
-  <div class="data-footer">
-    <div class="data-footer-lbl">Data</div>
-    <div class="data-footer-btns">
+  <div class="sec-title sec-title-row">
+    <span>Workout History</span>
+    <span class="data-btns">
       <button class="data-btn" id="export-btn" onclick="exportData(this)">⬆ Export</button>
       <button class="data-btn" onclick="openImportModal()">⬇ Import</button>
-    </div>
-    <div class="data-footer-note">Export copies a JSON backup to your clipboard and downloads a file. Import restores from pasted JSON.</div>
+    </span>
   </div>
+  <div id="hist-filter-wrap"></div>
+  <div id="hist-container"><div class="empty-hist">No workouts yet.<br>Complete your first session! 💪</div></div>
 </div>
 
 <!-- REST OVERLAY -->
@@ -801,7 +800,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.7';
+const APP_VERSION = '5.8';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -1942,7 +1941,7 @@ function renderHistory() {
         <span>${ds} · ${ts} · ${h.location==='gym'?'🏋️':'🏠'} · ${h.durationMin}min</span>
         <span class="hist-hdr-right">
           <span class="hist-badge">${h.totalSets} sets</span>
-          ${h.partial ? '<span class="hist-badge partial">partial</span>' : ''}
+          ${h.backfilled ? '<span class="hist-badge partial">backfilled</span>' : h.partial ? '<span class="hist-badge partial">partial</span>' : ''}
           <button class="hist-del-day" onclick="deleteDay(${h.ts})" title="Delete entire day">🗑</button>
         </span>
       </div>
@@ -2244,6 +2243,10 @@ function exportData(btn) {
     a.download = `abracadabra-backup-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    // v5.8: the footer note explaining what Export does went away with the compact
+    // buttons, so say it at the moment it happens instead. If the clipboard write
+    // fails its own toast lands afterwards and correctly replaces this one.
+    showToast('Backup copied to clipboard + file downloaded');
   } catch (e) { showToast('File download not supported here'); }
 }
 function openImportModal() {
