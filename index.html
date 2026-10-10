@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.8 — 10_09_2026
+  ABracadABra — v5.9 — 10_09_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -800,7 +800,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.8';
+const APP_VERSION = '5.9';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -1166,6 +1166,18 @@ function pickEx(group, loc, exclude) {
   // BACKLOG 2: default to last time's actual value instead of the catalog default, if we have one
   const last = state.lastUsed[chosen.name];
   if (last != null) chosen.reps = last;
+  // v5.9: per-set defaults. state.lastUsed holds ONE number per exercise, overwritten by
+  // every set, so 10/15/5 came back as 5-5-5 next time. The real per-set arrays were in
+  // history all along — read them from there rather than reshaping lastUsed, which would
+  // need a storage migration and leaves two sources of truth to drift apart.
+  const series = prevSeriesFor(chosen.name);
+  if (series) {
+    chosen.repSeries = series.reps;
+    if (series.weights && series.weights.some(v => v != null)) chosen.weightSeries = series.weights;
+    // keep .reps meaningful for anything still reading a single number
+    const first = series.reps.find(v => v != null);
+    if (first != null) chosen.reps = first;
+  }
   return chosen;
 }
 function generateWorkout(loc) {
@@ -1284,7 +1296,15 @@ function renderHome() {
   list.innerHTML = '';
   state.todayEx.forEach((ex, i) => {
     const g = GRP[ex.group];
-    const detail = ex.unit === 'sec' ? `3 sets × ${ex.reps}s` : `3 sets × ${ex.reps} reps`;
+    // v5.9: show the per-set series when last session's sets differed, e.g.
+    // "3 sets × 10·15·5 reps". A flat series collapses back to one number so the
+    // common case does not get noisier. Nulls render as — (a set that was skipped).
+    const unitLbl = ex.unit === 'sec' ? 's' : ' reps';
+    const srs = ex.repSeries;
+    const varied = srs && new Set(srs.filter(v => v != null)).size > 1;
+    const detail = varied
+      ? `3 sets × ${srs.map(v => v == null ? '—' : v).join('·')}${unitLbl}`
+      : `3 sets × ${ex.reps}${unitLbl}`;
     const pb = state.pbs[ex.name];
     const pbStr = pb ? (ex.unit === 'sec' ? `PB: ${pb.best}s` : `PB: ${pb.best} reps/set`) : '';
     list.innerHTML += `<div class="ex-item">
@@ -1434,8 +1454,18 @@ function renderWorkoutStep() {
   const prev = prevRepsFor(ex.name);
   if (prev) {
     prevEl.style.display = 'block';
-    let prevLine = `Prev: ${prev.logged.map(r => r + prev.unit).join(' · ')}`;
-    if (prev.weights && prev.weights.length) prevLine += ` @ ${prev.weights[prev.weights.length-1]}lb`;
+    // v5.9: pair each weight with its own set. This read "10 · 15 · 5 @ 20lb" before —
+    // every rep count but only the LAST weight, which misreports the two sets before it.
+    const srs = prevSeriesFor(ex.name);
+    let prevLine;
+    if (srs && srs.weights && srs.weights.some(v => v != null)) {
+      prevLine = 'Prev: ' + srs.reps
+        .map((r, i) => r == null ? null
+          : r + srs.unit + (srs.weights[i] != null ? `@${srs.weights[i]}lb` : ''))
+        .filter(Boolean).join(' · ');
+    } else {
+      prevLine = `Prev: ${prev.logged.map(r => r + prev.unit).join(' · ')}`;
+    }
     prevEl.innerHTML = prevLine;
   } else { prevEl.style.display = 'none'; prevEl.innerHTML = ''; }
 
@@ -1473,8 +1503,15 @@ function renderWorkoutStep() {
     const wInp = document.getElementById('weight-input');
     if (ex.weighted) {
       wWrap.style.display = 'flex';
+      // v5.9: same resolution order as targetForSet — a weight entered this session
+      // carries forward, otherwise offer what was lifted on THIS set last time, and
+      // only then fall back to the single lastUsedWeight scalar.
       const cw = w.currentWeight[w.exIdx];
-      const defaultW = cw != null ? cw : (state.lastUsedWeight[ex.name] != null ? state.lastUsedWeight[ex.name] : '');
+      const ws = ex.weightSeries;
+      let defaultW = '';
+      if (cw != null) defaultW = cw;
+      else if (ws && ws[w.setIdx] != null) defaultW = ws[w.setIdx];
+      else if (state.lastUsedWeight[ex.name] != null) defaultW = state.lastUsedWeight[ex.name];
       wInp.value = defaultW;
     } else {
       wWrap.style.display = 'none';
@@ -2133,6 +2170,25 @@ function saveEditSet() {
 }
 
 // Last session's logged reps for an exercise, or null
+// v5.9: the most recent session's per-set arrays with POSITION PRESERVED. prevRepsFor()
+// below filters nulls out, which is right for the "Prev:" summary but destroys the
+// set-to-set alignment that per-set defaults need — set 2 must map to set 2.
+// Returns the first session that logged anything for this exercise, newest first.
+function prevSeriesFor(name) {
+  for (const h of state.history) {
+    const e = h.exercises.find(x => x.name === name);
+    if (!e) continue;
+    const reps = e.loggedReps || [];
+    if (!reps.some(v => v !== null)) continue; // skipped entirely — keep looking back
+    return {
+      reps,
+      weights: e.weighted ? (e.loggedWeight || []) : null,
+      unit: e.unit,
+    };
+  }
+  return null;
+}
+
 function prevRepsFor(name) {
   for (const h of state.history) {
     const e = h.exercises.find(x => x.name === name);
@@ -2337,9 +2393,21 @@ function preloadAnswer(yes) {
 // ═══════════════════════
 // BACKLOG 2: live per-exercise target, carries forward from set to set within the session.
 // Falls back to the exercise's session target (which itself defaults from lastUsed — see pickEx).
-function timedDuration(exIdx, setIdx) {
+// v5.9: resolution order, highest first —
+//   1. currentTarget[exIdx]  an adjustment the owner made this session; still carries
+//      forward to later sets, which is the v4.9 behaviour and stays deliberate
+//   2. repSeries[setIdx]     what he actually did on THIS set last time
+//   3. ex.reps               catalog/session target
+function targetForSet(exIdx, setIdx) {
   const ct = state.workout.currentTarget[exIdx];
-  return ct != null ? ct : state.todayEx[exIdx].reps;
+  if (ct != null) return ct;
+  const ex = state.todayEx[exIdx];
+  const s = ex.repSeries;
+  if (s && s[setIdx] != null) return s[setIdx];
+  return ex.reps;
+}
+function timedDuration(exIdx, setIdx) {
+  return targetForSet(exIdx, setIdx);
 }
 function adjustSetDuration(delta) {
   const w = state.workout;
@@ -2351,9 +2419,9 @@ function adjustSetDuration(delta) {
 }
 // BACKLOG 3: same live-target mechanism for rep-based exercises (e.g. Hanging Leg Raise),
 // so the target is adjustable pre-set rather than only entered after finishing.
-function repsTarget(exIdx) {
-  const ct = state.workout.currentTarget[exIdx];
-  return ct != null ? ct : state.todayEx[exIdx].reps;
+function repsTarget(exIdx, setIdx) {
+  // every caller means "the set we are on" — default rather than edit five call sites
+  return targetForSet(exIdx, setIdx != null ? setIdx : state.workout.setIdx);
 }
 function adjustRepsTarget(delta) {
   const w = state.workout;
