@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.6 — 08_26_2026
+  ABracadABra — v5.7 — 10_09_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -261,6 +261,7 @@
   .hist-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
   .hist-date{font-size:12px;color:var(--text-dim);font-weight:500;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .hist-badge{font-size:10px;background:rgba(34,197,94,.15);color:var(--green);padding:2px 8px;border-radius:8px;font-weight:600;}
+  .hist-badge.partial{background:rgba(234,179,8,.15);color:var(--yellow);}
   .hist-exs{display:flex;flex-direction:column;gap:4px;}
   .hist-ex{font-size:13px;color:var(--text);display:flex;justify-content:space-between;}
   .hist-ex span{color:var(--text-dim);font-size:12px;}
@@ -800,7 +801,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.6';
+const APP_VERSION = '5.7';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -1689,9 +1690,18 @@ function exitWorkout() {
     document.getElementById('rest-overlay').classList.remove('visible');
     updateRestPill(false); // CHANGE 4
     logQuitSilently(); // BACKLOG 1: must run before the state below is torn down
+    // v5.7: a quit with real sets behind it is still a workout. completeSet() has
+    // already banked those sets into PBs and lastUsed, so dropping the session here
+    // made the app contradict itself — and silently broke the streak on any day the
+    // owner trained but did not press through the final set. Filed as partial:true.
+    // Also reads state.workout, so it must run before the teardown below.
+    if (state.workout.setsCompleted.flat().filter(Boolean).length > 0) {
+      state.history.unshift(buildSessionEntry(true));
+    }
     state.workout.active = false;
     releaseWakeLock(); // FEATURE 4
     clearSession(); // v4.8: deliberate quit — drop the saved session
+    save();         // v5.7: exitWorkout never persisted before; the partial entry needs it
     renderHome(); // CHANGE 3: refresh resume banner vs start button
     showScreen('home');
     document.getElementById('bottom-nav').style.display = 'flex';
@@ -1757,16 +1767,14 @@ function updateRestPill(show) {
 // ═══════════════════════
 // FINISH
 // ═══════════════════════
-function finishWorkout() {
-  clearTimers(); clearInterval(restTimer);
-  document.getElementById('rest-overlay').classList.remove('visible');
-  updateRestPill(false); // CHANGE 4
+// Builds the history record for the in-flight session. Shared by finishWorkout()
+// and the Quit path (v5.7) so the completed and partial shapes can never drift.
+function buildSessionEntry(partial) {
   const w = state.workout;
   const elapsed = Math.round((Date.now() - w.startTime) / 60000);
-  const totalSets = w.setsCompleted.flat().filter(Boolean).length;
-
   const entry = {
-    ts: Date.now(), location: state.location, durationMin: elapsed || 1, totalSets,
+    ts: Date.now(), location: state.location, durationMin: elapsed || 1,
+    totalSets: w.setsCompleted.flat().filter(Boolean).length,
     exercises: state.todayEx.map((ex, i) => {
       const logged = w.setLoggedReps[i].filter(v => v !== null);
       const avg = logged.length ? Math.round(logged.reduce((a,b)=>a+b,0)/logged.length) : ex.reps;
@@ -1786,6 +1794,18 @@ function finishWorkout() {
       return result;
     }),
   };
+  if (partial) entry.partial = true;
+  return entry;
+}
+
+function finishWorkout() {
+  clearTimers(); clearInterval(restTimer);
+  document.getElementById('rest-overlay').classList.remove('visible');
+  updateRestPill(false); // CHANGE 4
+  const w = state.workout;
+  const entry = buildSessionEntry(false);
+  const elapsed = entry.durationMin;
+  const totalSets = entry.totalSets;
   state.history.unshift(entry);
   state.workout.active = false;
   releaseWakeLock(); // FEATURE 4
@@ -1922,6 +1942,7 @@ function renderHistory() {
         <span>${ds} · ${ts} · ${h.location==='gym'?'🏋️':'🏠'} · ${h.durationMin}min</span>
         <span class="hist-hdr-right">
           <span class="hist-badge">${h.totalSets} sets</span>
+          ${h.partial ? '<span class="hist-badge partial">partial</span>' : ''}
           <button class="hist-del-day" onclick="deleteDay(${h.ts})" title="Delete entire day">🗑</button>
         </span>
       </div>
