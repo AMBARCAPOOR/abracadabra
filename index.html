@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  ABracadABra — v5.9 — 10_09_2026
+  ABracadABra — v6.0 — 10_29_2026
   Changes in this revision:
     1. DESCRIPTIONS FOR THE 34 NEW EXERCISES — v5.0 added them to DB but not to DESC, so the
        info panel showed 'No description available.' for every one of them. DESC is a separate
@@ -628,6 +628,7 @@
   <div class="sec-title sec-title-row">
     <span>Workout History</span>
     <span class="data-btns">
+      <button class="data-btn" onclick="openAddDayModal()">+ Day</button>
       <button class="data-btn" id="export-btn" onclick="exportData(this)">⬆ Export</button>
       <button class="data-btn" onclick="openImportModal()">⬇ Import</button>
     </span>
@@ -755,6 +756,20 @@
   </div>
 </div>
 
+<!-- ADD MISSED DAY (v6.0) -->
+<div class="modal-overlay" id="addday-modal" onclick="closeModal('addday-modal',event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add a missed day</div>
+    <div class="edit-sub" style="margin-bottom:12px;">For a day you trained but forgot to log. It counts toward your streak and is marked <strong>backfilled</strong>, with no exercises — so your PBs and totals stay honest.</div>
+    <input class="edit-input" id="addday-date" type="date" style="font-size:22px;">
+    <div class="edit-actions">
+      <button class="edit-cancel" onclick="closeModal('addday-modal')">Cancel</button>
+      <button class="edit-save" onclick="addMissedDay()">Add day</button>
+    </div>
+  </div>
+</div>
+
 <!-- TARGET EDIT MODAL (EDIT 4) -->
 <div class="modal-overlay" id="target-modal" onclick="closeModal('target-modal',event)">
   <div class="modal-sheet">
@@ -800,7 +815,7 @@
 // ═══════════════════════
 // APP VERSION (bump this one line per revision)
 // ═══════════════════════
-const APP_VERSION = '5.9';
+const APP_VERSION = '6.0';
 
 // ═══════════════════════
 // EXERCISE DATABASE
@@ -2305,6 +2320,41 @@ function exportData(btn) {
     showToast('Backup copied to clipboard + file downloaded');
   } catch (e) { showToast('File download not supported here'); }
 }
+// ═══════════════════════
+// v6.0 — ADD A MISSED DAY
+// ═══════════════════════
+// Forgetting to log is routine, and the only previous repair was export → hand-edit the
+// JSON → import, which overwrites ALL history and silently destroys anything logged since
+// that export was taken. This writes the one day in place instead.
+function openAddDayModal() {
+  const d = new Date(); d.setDate(d.getDate() - 1); // yesterday is the usual case
+  document.getElementById('addday-date').value =
+    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('addday-modal').classList.add('visible');
+}
+function addMissedDay() {
+  const raw = document.getElementById('addday-date').value;
+  if (!raw) { showToast('Pick a date first'); return; }
+  const [y, m, d] = raw.split('-').map(Number);
+  // local noon: calcStreak() compares toDateString() in local time, and noon cannot be
+  // dragged across a date boundary by a timezone offset or a DST shift.
+  const ts = new Date(y, m - 1, d, 12, 0, 0).getTime();
+  if (ts > Date.now()) { showToast('That day has not happened yet'); return; }
+  const key = new Date(ts).toDateString();
+  if (state.history.some(h => new Date(h.ts).toDateString() === key)) {
+    showToast('That day is already logged'); return;
+  }
+  state.history.push({
+    ts, location: 'gym', durationMin: 0, totalSets: 0,
+    exercises: [], partial: true, backfilled: true,
+  });
+  state.history.sort((a, b) => b.ts - a.ts); // newest first, as every reader assumes
+  save();
+  closeModal('addday-modal');
+  renderHistory(); renderHome();
+  showToast(`Added ${new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · streak now ${calcStreak()}`);
+}
+
 function openImportModal() {
   document.getElementById('import-input').value = '';
   document.getElementById('import-modal').classList.add('visible');
